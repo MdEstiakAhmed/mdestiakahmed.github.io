@@ -39,7 +39,7 @@ a {
 .icon_container {
   display: flex;
   align-items: flex-end;
-  gap: 0 8px;
+  gap: 0 15px;
   justify-content: flex-start;
   padding: 10px 0;
 }
