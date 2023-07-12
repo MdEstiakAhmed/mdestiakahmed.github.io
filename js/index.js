@@ -10,6 +10,7 @@ const icons = {
 const mailDiv = document.getElementById("mail");
 const githubDiv = document.getElementById("github");
 const linkedinDiv = document.getElementById("linkedin");
+const twitterDiv = document.getElementById("twitter");
 const facebookDiv = document.getElementById("facebook");
 const instagramDiv = document.getElementById("instagram");
 
