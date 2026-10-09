@@ -1,48 +1,113 @@
 ---
 import { Image } from 'astro:assets';
-import { GraduationCap, MapPin } from 'lucide-react';
+import { Clock, GraduationCap, MapPin, Sparkles } from 'lucide-react';
 
 import avatar from '@/assets/estiak-800.webp';
-
 import Section from '@/components/ui/Section.astro';
-import { education, profile, stats } from '@/data/site-data';
+import { education, now, profile, stats } from '@/data/site-data';
 
 const degree = education[0];
+const tile = 'reveal rounded-3xl border bg-card p-6';
 ---
 
 <Section id="about" eyebrow="About" title="Frontend first, full-stack when it counts">
-  <div class="grid gap-12 md:grid-cols-[3fr_2fr]">
-    <div class="space-y-5 text-lg leading-relaxed text-muted-foreground">
+  <div class="grid auto-rows-[minmax(9rem,auto)] grid-cols-2 gap-4 lg:grid-cols-4">
+    <!-- Photo -->
+    <div
+      data-tilt="6"
+      class="reveal relative col-span-2 overflow-hidden rounded-3xl border sm:col-span-1 sm:row-span-2"
+    >
       <Image
         src={avatar}
         alt={`Portrait of ${profile.name}`}
-        widths={[160, 320]}
-        sizes="160px"
-        class="size-28 rounded-2xl object-cover ring-1 ring-border sm:size-36"
+        widths={[320, 480, 640]}
+        sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw"
+        class="size-full min-h-72 object-cover"
       />
-      {profile.bio.map((p) => (
-        <p>{p}</p>
-      ))}
-      <ul class="flex flex-wrap gap-x-6 gap-y-2 pt-2 text-sm">
-        <li class="inline-flex items-center gap-2">
-          <MapPin className="size-4 text-primary" aria-hidden="true" />
-          {profile.location}
-        </li>
-        {degree && (
-          <li class="inline-flex items-center gap-2">
-            <GraduationCap className="size-4 text-primary" aria-hidden="true" />
-            {degree.credential}, AIUB
-          </li>
-        )}
-      </ul>
+      <div class="absolute inset-x-3 bottom-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white backdrop-blur-md">
+        <p class="font-semibold">{profile.name}</p>
+        <p class="text-xs text-white/75">{profile.title}</p>
+      </div>
     </div>
-    <dl class="grid grid-cols-3 gap-4 self-start md:grid-cols-1">
-      {stats.map((s) => (
-        <div class="rounded-xl border bg-card p-5">
-          <dt class="text-sm text-muted-foreground">{s.label}</dt>
-          <dd class="mt-1 text-3xl font-bold sm:text-4xl">{s.value()}</dd>
-        </div>
+
+    <!-- Bio -->
+    <div
+      data-spotlight
+      class:list={[tile, 'col-span-2 flex flex-col justify-center gap-4 sm:row-span-2']}
+    >
+      <p class="text-sm font-medium text-primary">Hi, I'm {profile.shortName} 👋</p>
+      {profile.bio.map((p) => (
+        <p class="text-base leading-relaxed text-muted-foreground lg:text-lg">{p}</p>
       ))}
-    </dl>
+    </div>
+
+    <!-- Currently -->
+    <div
+      data-spotlight
+      class:list={[tile, 'col-span-2 flex flex-col justify-between gap-4 sm:col-span-1']}
+    >
+      <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <span class="relative flex size-2">
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60"></span>
+          <span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
+        </span>
+        Currently at {now.company}
+      </span>
+      <p class="flex items-start gap-2 font-medium">
+        <Sparkles className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
+        Building {now.building}
+      </p>
+    </div>
+
+    <!-- Location + live clock -->
+    <div
+      data-spotlight
+      class:list={[
+        tile,
+        'col-span-2 flex flex-col justify-between gap-4 overflow-hidden sm:col-span-1',
+      ]}
+    >
+      <div
+        aria-hidden="true"
+        class="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-[radial-gradient(circle,var(--primary)_1px,transparent_1.5px)] [background-size:10px_10px] opacity-30 [mask-image:radial-gradient(circle,black_40%,transparent_70%)]"
+      ></div>
+      <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <MapPin className="size-3.5 text-primary" aria-hidden="true" /> Based in
+      </span>
+      <div>
+        <p class="font-semibold">{profile.location}</p>
+        <p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Clock className="size-3.5" aria-hidden="true" />
+          <span data-clock={now.timeZone}>GMT+6</span>
+          <span>local time</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    {stats.map((s) => (
+      <div data-spotlight class:list={[tile, 'flex flex-col justify-end']}>
+        <p class="text-4xl font-bold tracking-tight sm:text-5xl">
+          <span data-count-to={s.value()}>{s.value()}</span>
+          <span class="text-primary">{s.suffix}</span>
+        </p>
+        <p class="mt-2 text-sm text-muted-foreground">{s.label}</p>
+      </div>
+    ))}
+
+    <!-- Education -->
+    {degree && (
+      <div data-spotlight class:list={[tile, 'flex flex-col justify-between gap-4']}>
+        <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <GraduationCap className="size-3.5 text-primary" aria-hidden="true" /> Studied
+        </span>
+        <div>
+          <p class="font-semibold">{degree.credential}</p>
+          <p class="mt-1 text-sm text-muted-foreground">
+            AIUB · {degree.start}–{degree.end}
+          </p>
+        </div>
+      </div>
+    )}
   </div>
 </Section>
