@@ -1,6 +1,7 @@
 ---
 import {
   AppWindow,
+  ArrowUpRight,
   Component,
   LifeBuoy,
   MonitorSmartphone,
@@ -23,19 +24,124 @@ const icons: Record<string, LucideIcon> = {
 ---
 
 <Section id="services" eyebrow="Services" title="How I can help">
-  <ul class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <ul class="border-t">
     {services.map((s, i) => {
       const Icon = icons[s.icon] ?? AppWindow;
       return (
-        <li class="relative rounded-2xl border bg-card p-6">
-          <span class="absolute top-5 right-6 text-sm font-medium text-muted-foreground/60">
-            {String(i + 1).padStart(2, '0')}
-          </span>
-          <Icon className="mb-5 size-8 text-primary" strokeWidth={1.5} aria-hidden="true" />
-          <h3 class="mb-2 font-semibold">{s.title}</h3>
-          <p class="text-sm text-muted-foreground">{s.description}</p>
+        <li class="service reveal group relative isolate overflow-hidden border-b">
+          <div class="relative grid grid-cols-[auto_1fr] items-start gap-x-5 px-2 py-6 sm:gap-x-8 sm:px-4 md:grid-cols-[4rem_1fr_auto] md:items-center md:py-8">
+            <span class="service-num font-mono text-sm text-muted-foreground tabular-nums md:text-base">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <div class="min-w-0">
+              <h3 class="text-xl font-bold tracking-tight sm:text-2xl md:text-4xl">{s.title}</h3>
+              <div class="service-body grid">
+                <div class="overflow-hidden">
+                  <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-3">
+                    <p class="service-desc max-w-xl text-muted-foreground md:text-lg">
+                      {s.description}
+                    </p>
+                    <a
+                      href="#contact"
+                      class="service-cta inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      Let's talk <ArrowUpRight className="size-4" aria-hidden="true" />
+                      <span class="sr-only">about {s.title}</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <span
+              aria-hidden="true"
+              class="service-icon hidden size-16 place-items-center rounded-full border md:grid"
+            >
+              <Icon className="size-7" strokeWidth={1.5} />
+            </span>
+          </div>
         </li>
       );
     })}
   </ul>
 </Section>
+
+<style>
+  /* Colour wipe behind the row. */
+  .service::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      90deg,
+      var(--primary),
+      color-mix(in oklch, var(--primary) 70%, #22d3ee)
+    );
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 500ms cubic-bezier(0.7, 0, 0.2, 1);
+  }
+
+  .service-num,
+  .service h3,
+  .service-desc,
+  .service-cta,
+  .service-icon {
+    transition:
+      color 300ms,
+      border-color 300ms,
+      transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .service-icon {
+    color: var(--muted-foreground);
+  }
+
+  /* Mouse screens keep rows compact and open one on hover or keyboard focus; touch shows all. */
+  @media (hover: hover) and (pointer: fine) {
+    .service-body {
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .service-desc,
+    .service-cta {
+      opacity: 0;
+      transition:
+        opacity 300ms,
+        color 300ms;
+    }
+
+    .service:is(:hover, :focus-within) {
+      &::before {
+        transform: scaleX(1);
+      }
+      .service-body {
+        grid-template-rows: 1fr;
+      }
+      .service-desc,
+      .service-cta {
+        opacity: 1;
+        transition-delay: 120ms;
+      }
+      .service-num,
+      h3,
+      .service-desc,
+      .service-cta {
+        color: var(--primary-foreground);
+      }
+      h3 {
+        transform: translateX(0.5rem);
+      }
+      .service-icon {
+        color: var(--primary-foreground);
+        border-color: color-mix(in oklch, var(--primary-foreground) 40%, transparent);
+        transform: rotate(-12deg) scale(1.15);
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .service::before {
+      transition: none;
+    }
+  }
+</style>
