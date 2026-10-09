@@ -1,0 +1,28 @@
+---
+import MobileMenu from '@/components/layout/MobileMenu';
+import ThemeToggle from '@/components/ThemeToggle';
+import { nav, profile } from '@/data/site-data';
+---
+
+<header class="sticky top-0 z-50 border-b border-transparent bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+    <a href="#home" class="font-semibold tracking-tight">
+      {profile.name}
+    </a>
+    <nav aria-label="Primary" class="hidden md:block">
+      <ul class="flex gap-6 text-sm text-muted-foreground">
+        {nav.map((item) => (
+          <li>
+            <a href={item.href} class="transition-colors hover:text-foreground">
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <div class="flex items-center gap-2">
+      <ThemeToggle client:load />
+      <MobileMenu client:media="(max-width: 767px)" items={nav} />
+    </div>
+  </div>
+</header>

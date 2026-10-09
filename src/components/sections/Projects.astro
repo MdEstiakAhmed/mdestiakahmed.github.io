@@ -1,0 +1,65 @@
+---
+import { Image } from 'astro:assets';
+import { ArrowUpRight } from 'lucide-react';
+
+import Section from '@/components/ui/Section.astro';
+import Tag from '@/components/ui/Tag.astro';
+import { projects } from '@/data/site-data';
+---
+
+<Section id="projects" eyebrow="Projects" title="Selected freelance work">
+  <ul class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    {projects.map((p) => (
+      <li class="flex flex-col overflow-hidden rounded-2xl border bg-card">
+        <div class="aspect-[16/10] overflow-hidden border-b">
+          <Image
+            src={p.image.light}
+            alt={`${p.title} logo`}
+            widths={[400, 640, 800]}
+            sizes="(min-width: 1024px) 360px, (min-width: 768px) 50vw, 100vw"
+            class="size-full object-cover dark:hidden"
+          />
+          <Image
+            src={p.image.dark}
+            alt=""
+            aria-hidden="true"
+            widths={[400, 640, 800]}
+            sizes="(min-width: 1024px) 360px, (min-width: 768px) 50vw, 100vw"
+            class="hidden size-full object-cover dark:block"
+          />
+        </div>
+        <div class="flex flex-1 flex-col gap-4 p-6">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-lg font-semibold">{p.title}</h3>
+            <span class="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
+              {p.role}
+            </span>
+          </div>
+          <p class="text-sm text-muted-foreground">{p.summary}</p>
+          <ul class="list-disc space-y-1 pl-5 text-sm text-muted-foreground marker:text-primary">
+            {p.highlights.map((h) => (
+              <li>{h}</li>
+            ))}
+          </ul>
+          <div class="flex flex-wrap gap-2">
+            {p.stack.map((t) => (
+              <Tag>{t}</Tag>
+            ))}
+          </div>
+          <div class="mt-auto flex flex-wrap gap-x-4 gap-y-2 pt-2">
+            {p.links.map((l) => (
+              <a
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              >
+                {l.label} <ArrowUpRight className="size-3.5" aria-hidden="true" />
+              </a>
+            ))}
+          </div>
+        </div>
+      </li>
+    ))}
+  </ul>
+</Section>

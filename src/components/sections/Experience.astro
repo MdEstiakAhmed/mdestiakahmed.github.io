@@ -1,0 +1,88 @@
+---
+import Section from '@/components/ui/Section.astro';
+import Tag from '@/components/ui/Tag.astro';
+import { experience } from '@/data/site-data';
+import { formatDuration, formatRange } from '@/lib/format';
+---
+
+<Section id="experience" eyebrow="Experience" title="Where I've worked">
+  <ol class="relative space-y-12 border-l pl-8">
+    {experience.map((job) => {
+      const first = job.positions.at(-1);
+      const latest = job.positions[0];
+      return (
+        <li class="relative">
+          <span class="absolute top-1.5 -left-[2.4rem] size-3 rounded-full border-2 border-primary bg-background" />
+          <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h3 class="text-xl font-semibold">
+              <a
+                href={job.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="hover:text-primary"
+              >
+                {job.company}
+              </a>
+            </h3>
+            {first && latest && (
+              <p class="text-sm text-muted-foreground">
+                {formatRange(first.start, latest.end)} · {formatDuration(first.start, latest.end)}
+              </p>
+            )}
+          </div>
+          {job.formerly && (
+            <p class="text-xs text-muted-foreground">Formerly {job.formerly.join(', ')}</p>
+          )}
+          <ul class="mt-3 space-y-1">
+            {job.positions.map((p) => (
+              <li class="flex flex-wrap justify-between gap-x-4 text-sm">
+                <span class="font-medium text-primary">{p.title}</span>
+                {job.positions.length > 1 && (
+                  <span class="text-muted-foreground">{formatRange(p.start, p.end)}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <ul class="mt-4 list-disc space-y-1.5 pl-5 text-muted-foreground marker:text-primary">
+            {job.bullets.map((b) => (
+              <li>{b}</li>
+            ))}
+          </ul>
+          {job.projects && (
+            <details class="group mt-4">
+              <summary class="cursor-pointer text-sm font-medium text-primary">
+                {job.projects.length} projects
+              </summary>
+              <ul class="mt-3 grid gap-3 sm:grid-cols-2">
+                {job.projects.map((wp) => (
+                  <li class="rounded-lg border bg-card p-4 text-sm">
+                    <p class="font-medium">
+                      {wp.url ? (
+                        <a
+                          href={wp.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="hover:text-primary"
+                        >
+                          {wp.name}
+                        </a>
+                      ) : (
+                        wp.name
+                      )}
+                    </p>
+                    <p class="mt-1 text-muted-foreground">{wp.description}</p>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          <div class="mt-4 flex flex-wrap gap-2">
+            {job.stack.map((t) => (
+              <Tag>{t}</Tag>
+            ))}
+          </div>
+        </li>
+      );
+    })}
+  </ol>
+</Section>

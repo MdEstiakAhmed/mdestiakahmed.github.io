@@ -1,0 +1,66 @@
+---
+import { Image } from 'astro:assets';
+import { ArrowDown, Download } from 'lucide-react';
+
+import SocialLinks from '@/components/SocialLinks.astro';
+import { profile } from '@/data/site-data';
+import avatar from '@/assets/estiak-800.webp';
+---
+
+<section
+  id="home"
+  aria-label="Intro"
+  class="grid min-h-[calc(100dvh-4rem)] items-center gap-12 py-16 md:grid-cols-[1fr_auto]"
+>
+  <div class="space-y-7">
+    {profile.availability.open && (
+      <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
+        <span class="relative flex size-2">
+          <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+          <span class="relative inline-flex size-2 rounded-full bg-emerald-500" />
+        </span>
+        {profile.availability.label}
+      </span>
+    )}
+    <div class="space-y-3">
+      <h1 class="text-5xl font-bold tracking-tight sm:text-7xl">{profile.name}</h1>
+      <p class="text-xl font-medium text-primary sm:text-2xl">
+        {profile.title}
+        <span class="sr-only">, {profile.typingRoles.join(', ')}</span>
+      </p>
+    </div>
+    <p class="max-w-xl text-lg text-muted-foreground">{profile.tagline}</p>
+    <div class="flex flex-wrap gap-3">
+      <a
+        href="#projects"
+        class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+      >
+        View projects <ArrowDown className="size-4" aria-hidden="true" />
+      </a>
+      <a
+        href={profile.cv}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
+      >
+        <Download className="size-4" aria-hidden="true" /> Download CV
+      </a>
+      <a
+        href="#contact"
+        class="inline-flex items-center rounded-full px-6 py-3 text-sm font-medium text-primary hover:underline"
+      >
+        Hire me
+      </a>
+    </div>
+    <SocialLinks only={['github', 'linkedin', 'x']} />
+  </div>
+  <Image
+    src={avatar}
+    alt={`Portrait of ${profile.name}`}
+    widths={[224, 320, 448]}
+    sizes="(min-width: 640px) 320px, 224px"
+    loading="eager"
+    fetchpriority="high"
+    class="mx-auto size-56 rounded-full object-cover ring-1 ring-border sm:size-80"
+  />
+</section>

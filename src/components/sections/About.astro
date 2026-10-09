@@ -1,0 +1,38 @@
+---
+import { GraduationCap, MapPin } from 'lucide-react';
+
+import Section from '@/components/ui/Section.astro';
+import { education, profile, stats } from '@/data/site-data';
+
+const degree = education[0];
+---
+
+<Section id="about" eyebrow="About" title="Frontend first, full-stack when it counts">
+  <div class="grid gap-12 md:grid-cols-[3fr_2fr]">
+    <div class="space-y-5 text-lg leading-relaxed text-muted-foreground">
+      {profile.bio.map((p) => (
+        <p>{p}</p>
+      ))}
+      <ul class="flex flex-wrap gap-x-6 gap-y-2 pt-2 text-sm">
+        <li class="inline-flex items-center gap-2">
+          <MapPin className="size-4 text-primary" aria-hidden="true" />
+          {profile.location}
+        </li>
+        {degree && (
+          <li class="inline-flex items-center gap-2">
+            <GraduationCap className="size-4 text-primary" aria-hidden="true" />
+            {degree.credential}, AIUB
+          </li>
+        )}
+      </ul>
+    </div>
+    <dl class="grid grid-cols-3 gap-4 self-start md:grid-cols-1">
+      {stats.map((s) => (
+        <div class="rounded-xl border bg-card p-5">
+          <dt class="text-sm text-muted-foreground">{s.label}</dt>
+          <dd class="mt-1 text-3xl font-bold sm:text-4xl">{s.value()}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</Section>

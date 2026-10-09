@@ -1,0 +1,24 @@
+---
+import SocialLinks from '@/components/SocialLinks.astro';
+import { nav, profile } from '@/data/site-data';
+---
+
+<footer class="border-t">
+  <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between">
+    <p class="text-sm text-muted-foreground">
+      © {new Date().getFullYear()} {profile.name}
+    </p>
+    <nav aria-label="Footer">
+      <ul class="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+        {nav.map((item) => (
+          <li>
+            <a href={item.href} class="hover:text-foreground">
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <SocialLinks only={['github', 'linkedin', 'x']} />
+  </div>
+</footer>
