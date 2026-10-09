@@ -6,7 +6,6 @@ import avatar from '@/assets/estiak-800.webp';
 import Section from '@/components/ui/Section.astro';
 import { education, now, profile, stats } from '@/data/site-data';
 
-const degree = education[0];
 const tile = 'assemble rounded-3xl border bg-card p-6';
 
 // Order and entry side for each tile as the grid assembles on scroll.
@@ -110,7 +109,7 @@ const statFrom: From[] = ['left', 'bottom', 'bottom'];
       ))}
 
       <!-- Education -->
-      {degree && (
+      {education.length > 0 && (
         <div
           data-spotlight
           {...enter(4 + stats.length, 'right')}
@@ -119,12 +118,21 @@ const statFrom: From[] = ['left', 'bottom', 'bottom'];
           <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
             <GraduationCap className="size-3.5 text-primary" aria-hidden="true" /> Studied
           </span>
-          <div>
-            <p class="font-semibold">{degree.credential}</p>
-            <p class="mt-1 text-sm text-muted-foreground">
-              AIUB · {degree.start}–{degree.end}
-            </p>
-          </div>
+          <ol class="space-y-2">
+            {education.map((e) => (
+              <li class="flex items-baseline justify-between gap-3">
+                <span class="min-w-0">
+                  <span class="block text-sm font-semibold">{e.credential}</span>
+                  <span class="block truncate text-xs text-muted-foreground" title={e.institute}>
+                    {e.institute}
+                  </span>
+                </span>
+                <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {e.start}–{e.end}
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
       )}
     </div>
