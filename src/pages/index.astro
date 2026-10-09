@@ -20,7 +20,8 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     Skip to content
   </a>
   <Header />
-  <main id="main">
+  <!-- clip, not hidden: tiles fly in from off-screen without a sideways scroll, and sticky still works. -->
+  <main id="main" class="overflow-x-clip">
     <Hero />
     <div class="mx-auto max-w-6xl px-4 sm:px-6">
       <About />

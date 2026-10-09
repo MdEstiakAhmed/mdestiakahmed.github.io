@@ -48,8 +48,11 @@ function initCountUp(): void {
         io.unobserve(entry.target);
         const el = entry.target as HTMLElement;
         const target = Number(el.dataset.countTo);
+        // Tiles can still be flying in (About bento); count once the tile has landed.
+        const tile = el.closest<HTMLElement>('[data-from]');
+        const landed = (): boolean => !tile || Number(getComputedStyle(tile).opacity) > 0.9;
         const duration = 1400;
-        const start = performance.now();
+        let start = 0;
         const tick = (now: number): void => {
           const t = Math.min((now - start) / duration, 1);
           const eased = 1 - Math.pow(1 - t, 4);
@@ -57,12 +60,23 @@ function initCountUp(): void {
           if (t < 1) requestAnimationFrame(tick);
         };
         el.textContent = '0';
-        requestAnimationFrame(tick);
+        const wait = (): void => {
+          if (!landed()) {
+            requestAnimationFrame(wait);
+            return;
+          }
+          start = performance.now();
+          requestAnimationFrame(tick);
+        };
+        wait();
       }
     },
     { threshold: 0.6 },
   );
-  for (const el of els) io.observe(el);
+  for (const el of els) {
+    el.textContent = '0';
+    io.observe(el);
+  }
 }
 
 function initClocks(): void {

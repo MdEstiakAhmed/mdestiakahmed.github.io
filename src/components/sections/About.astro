@@ -7,107 +7,193 @@ import Section from '@/components/ui/Section.astro';
 import { education, now, profile, stats } from '@/data/site-data';
 
 const degree = education[0];
-const tile = 'reveal rounded-3xl border bg-card p-6';
+const tile = 'assemble rounded-3xl border bg-card p-6';
+
+// Order and entry side for each tile as the grid assembles on scroll.
+type From = 'left' | 'right' | 'top' | 'bottom';
+const enter = (i: number, from: From) => ({ 'data-from': from, style: `--i: ${i}` });
+const statFrom: From[] = ['left', 'bottom', 'bottom'];
 ---
 
 <Section id="about" eyebrow="About" title="Frontend first, full-stack when it counts">
-  <div class="grid auto-rows-[minmax(9rem,auto)] grid-cols-2 gap-4 lg:grid-cols-4">
-    <!-- Photo -->
-    <div
-      data-tilt="6"
-      class="reveal relative col-span-2 overflow-hidden rounded-3xl border sm:col-span-1 sm:row-span-2"
-    >
-      <Image
-        src={avatar}
-        alt={`Portrait of ${profile.name}`}
-        widths={[320, 480, 640]}
-        sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw"
-        class="size-full min-h-72 object-cover"
-      />
-      <div class="absolute inset-x-3 bottom-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white backdrop-blur-md">
-        <p class="font-semibold">{profile.name}</p>
-        <p class="text-xs text-white/75">{profile.title}</p>
-      </div>
-    </div>
-
-    <!-- Bio -->
-    <div
-      data-spotlight
-      class:list={[tile, 'col-span-2 flex flex-col justify-center gap-4 sm:row-span-2']}
-    >
-      <p class="text-sm font-medium text-primary">Hi, I'm {profile.shortName} 👋</p>
-      {profile.bio.map((p) => (
-        <p class="text-base leading-relaxed text-muted-foreground lg:text-lg">{p}</p>
-      ))}
-    </div>
-
-    <!-- Currently -->
-    <div
-      data-spotlight
-      class:list={[tile, 'col-span-2 flex flex-col justify-between gap-4 sm:col-span-1']}
-    >
-      <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <span class="relative flex size-2">
-          <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60"></span>
-          <span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
-        </span>
-        Currently at {now.company}
-      </span>
-      <p class="flex items-start gap-2 font-medium">
-        <Sparkles className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
-        Building {now.building}
-      </p>
-    </div>
-
-    <!-- Location + live clock -->
-    <div
-      data-spotlight
-      class:list={[
-        tile,
-        'col-span-2 flex flex-col justify-between gap-4 overflow-hidden sm:col-span-1',
-      ]}
-    >
+  <div class="assemble-track">
+    <div class="assemble-pin grid auto-rows-[minmax(9rem,auto)] grid-cols-2 gap-4 lg:grid-cols-4">
+      <!-- Photo -->
       <div
-        aria-hidden="true"
-        class="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-[radial-gradient(circle,var(--primary)_1px,transparent_1.5px)] [background-size:10px_10px] opacity-30 [mask-image:radial-gradient(circle,black_40%,transparent_70%)]"
-      ></div>
-      <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-        <MapPin className="size-3.5 text-primary" aria-hidden="true" /> Based in
-      </span>
-      <div>
-        <p class="font-semibold">{profile.location}</p>
-        <p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Clock className="size-3.5" aria-hidden="true" />
-          <span data-clock={now.timeZone}>GMT+6</span>
-          <span>local time</span>
-        </p>
+        data-tilt="6"
+        {...enter(0, 'left')}
+        class="assemble relative col-span-2 overflow-hidden rounded-3xl border sm:col-span-1 sm:row-span-2"
+      >
+        <Image
+          src={avatar}
+          alt={`Portrait of ${profile.name}`}
+          widths={[320, 480, 640]}
+          sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw"
+          class="size-full min-h-72 object-cover"
+        />
+        <div class="absolute inset-x-3 bottom-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white backdrop-blur-md">
+          <p class="font-semibold">{profile.name}</p>
+          <p class="text-xs text-white/75">{profile.title}</p>
+        </div>
       </div>
-    </div>
 
-    <!-- Stats -->
-    {stats.map((s) => (
-      <div data-spotlight class:list={[tile, 'flex flex-col justify-end']}>
-        <p class="text-4xl font-bold tracking-tight sm:text-5xl">
-          <span data-count-to={s.value()}>{s.value()}</span>
-          <span class="text-primary">{s.suffix}</span>
-        </p>
-        <p class="mt-2 text-sm text-muted-foreground">{s.label}</p>
+      <!-- Bio -->
+      <div
+        data-spotlight
+        {...enter(1, 'top')}
+        class:list={[tile, 'col-span-2 flex flex-col justify-center gap-4 sm:row-span-2']}
+      >
+        <p class="text-sm font-medium text-primary">Hi, I'm {profile.shortName} 👋</p>
+        {profile.bio.map((p) => (
+          <p class="text-base leading-relaxed text-muted-foreground lg:text-lg">{p}</p>
+        ))}
       </div>
-    ))}
 
-    <!-- Education -->
-    {degree && (
-      <div data-spotlight class:list={[tile, 'flex flex-col justify-between gap-4']}>
+      <!-- Currently -->
+      <div
+        data-spotlight
+        {...enter(2, 'right')}
+        class:list={[tile, 'col-span-2 flex flex-col justify-between gap-4 sm:col-span-1']}
+      >
         <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <GraduationCap className="size-3.5 text-primary" aria-hidden="true" /> Studied
+          <span class="relative flex size-2">
+            <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60"></span>
+            <span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
+          </span>
+          Currently at {now.company}
+        </span>
+        <p class="flex items-start gap-2 font-medium">
+          <Sparkles className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
+          Building {now.building}
+        </p>
+      </div>
+
+      <!-- Location + live clock -->
+      <div
+        data-spotlight
+        {...enter(3, 'right')}
+        class:list={[
+          tile,
+          'col-span-2 flex flex-col justify-between gap-4 overflow-hidden sm:col-span-1',
+        ]}
+      >
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-[radial-gradient(circle,var(--primary)_1px,transparent_1.5px)] [background-size:10px_10px] opacity-30 [mask-image:radial-gradient(circle,black_40%,transparent_70%)]"
+        ></div>
+        <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <MapPin className="size-3.5 text-primary" aria-hidden="true" /> Based in
         </span>
         <div>
-          <p class="font-semibold">{degree.credential}</p>
-          <p class="mt-1 text-sm text-muted-foreground">
-            AIUB · {degree.start}–{degree.end}
+          <p class="font-semibold">{profile.location}</p>
+          <p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Clock className="size-3.5" aria-hidden="true" />
+            <span data-clock={now.timeZone}>GMT+6</span>
+            <span>local time</span>
           </p>
         </div>
       </div>
-    )}
+
+      <!-- Stats -->
+      {stats.map((s, i) => (
+        <div
+          data-spotlight
+          {...enter(4 + i, statFrom[i] ?? 'bottom')}
+          class:list={[tile, 'flex flex-col justify-end']}
+        >
+          <p class="text-4xl font-bold tracking-tight sm:text-5xl">
+            <span data-count-to={s.value()}>{s.value()}</span>
+            <span class="text-primary">{s.suffix}</span>
+          </p>
+          <p class="mt-2 text-sm text-muted-foreground">{s.label}</p>
+        </div>
+      ))}
+
+      <!-- Education -->
+      {degree && (
+        <div
+          data-spotlight
+          {...enter(4 + stats.length, 'right')}
+          class:list={[tile, 'flex flex-col justify-between gap-4']}
+        >
+          <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <GraduationCap className="size-3.5 text-primary" aria-hidden="true" /> Studied
+          </span>
+          <div>
+            <p class="font-semibold">{degree.credential}</p>
+            <p class="mt-1 text-sm text-muted-foreground">
+              AIUB · {degree.start}–{degree.end}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   </div>
 </Section>
+
+<style>
+  /*
+   * The bento builds itself: tiles fly in one by one from their side.
+   * Wide, tall screens pin the grid and tie each tile to a slice of the scroll; elsewhere each
+   * tile assembles as it enters the viewport.
+   */
+  [data-from='left'] {
+    --dx: -110%;
+    --rot: -6deg;
+  }
+  [data-from='right'] {
+    --dx: 110%;
+    --rot: 6deg;
+  }
+  [data-from='top'] {
+    --dy: -90%;
+  }
+  [data-from='bottom'] {
+    --dy: 90%;
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .assemble {
+        animation: assemble cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        animation-timeline: var(--tl, view()); /* var(): see global.css .reveal */
+        animation-range: entry 0% entry 80%;
+      }
+
+      @media (min-width: 1024px) and (min-height: 760px) {
+        .assemble-track {
+          /* Roughly centre the grid (~32rem tall) under the header. */
+          --stick: max(6rem, calc(50vh - 16rem));
+          --hold: 130vh;
+          view-timeline: --about block;
+        }
+        /* Scroll room for the pinned grid. A child, not padding: sticky stops at the content box. */
+        .assemble-track::after {
+          content: '';
+          display: block;
+          height: var(--hold);
+        }
+        .assemble-pin {
+          position: sticky;
+          top: var(--stick);
+        }
+        .assemble {
+          /* Start slightly before the grid pins, then one tile every 13vh of scroll. */
+          --start: calc(80vh - var(--stick) + var(--i) * 13vh);
+          animation-timeline: var(--tl, --about);
+          animation-range: cover var(--start) cover calc(var(--start) + 24vh);
+        }
+      }
+    }
+  }
+
+  /* Individual transform properties leave `transform` free for the photo's tilt. */
+  @keyframes assemble {
+    from {
+      opacity: 0;
+      translate: var(--dx, 0) var(--dy, 0);
+      scale: 0.85;
+      rotate: var(--rot, 0deg);
+    }
+  }
+</style>
