@@ -132,7 +132,8 @@
   @supports (animation-timeline: view()) {
     .reveal {
       animation: reveal linear both;
-      animation-timeline: view();
+      /* var() stops minifiers folding this into the `animation` shorthand, which Chrome rejects. */
+      animation-timeline: var(--reveal-timeline, view());
       animation-range: entry 0% entry 60%;
     }
   }
