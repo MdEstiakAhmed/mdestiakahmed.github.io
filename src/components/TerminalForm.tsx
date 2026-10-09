@@ -1,16 +1,31 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { z } from 'zod';
 
 import { cn } from '@/lib/utils';
 
+type Check = { ok: true; value: string } | { ok: false; error: string };
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Plain validators: zod was ~60 kB of this island for three rules.
 const fields = {
-  name: z.string().trim().min(2, 'name: too short, try at least 2 characters'),
-  email: z.email('email: that does not look like a valid address'),
-  message: z
-    .string()
-    .trim()
-    .min(10, 'message: tell me a bit more (10+ characters)')
-    .max(5000, 'message: keep it under 5000 characters'),
+  name: (raw: string): Check => {
+    const value = raw.trim();
+    return value.length >= 2
+      ? { ok: true, value }
+      : { ok: false, error: 'name: too short, try at least 2 characters' };
+  },
+  email: (raw: string): Check => {
+    const value = raw.trim();
+    return EMAIL_RE.test(value)
+      ? { ok: true, value }
+      : { ok: false, error: 'email: that does not look like a valid address' };
+  },
+  message: (raw: string): Check => {
+    const value = raw.trim();
+    if (value.length < 10)
+      return { ok: false, error: 'message: tell me a bit more (10+ characters)' };
+    if (value.length > 5000) return { ok: false, error: 'message: keep it under 5000 characters' };
+    return { ok: true, value };
+  },
 } as const;
 
 type Field = keyof typeof fields;
@@ -84,18 +99,18 @@ export default function TerminalForm({ action, email }: Props) {
 
   const submit = (): void => {
     if (!current) return;
-    const parsed = fields[current.field].safeParse(draft);
+    const parsed = fields[current.field](draft);
     push({ kind: 'prompt', text: current.prompt }, { kind: 'answer', text: draft || ' ' });
-    if (!parsed.success) {
-      push({ kind: 'error', text: `✗ ${parsed.error.issues[0]?.message ?? 'invalid input'}` });
+    if (!parsed.ok) {
+      push({ kind: 'error', text: `✗ ${parsed.error}` });
       // Like a shell, start a fresh line; a long message is kept so it can be fixed.
       if (current.type !== 'textarea') setDraft('');
       return;
     }
-    const next = { ...values, [current.field]: parsed.data };
+    const next = { ...values, [current.field]: parsed.value };
     setValues(next);
     setDraft('');
-    if (current.field === 'name') push({ kind: 'ok', text: `✓ Hi ${parsed.data.split(' ')[0]}!` });
+    if (current.field === 'name') push({ kind: 'ok', text: `✓ Hi ${parsed.value.split(' ')[0]}!` });
     if (step < steps.length - 1) setStep(step + 1);
     else {
       setStep(steps.length);
