@@ -14,4 +14,5 @@ npm run format
 - Images: `src/assets/` (optimised by `astro:assets`), static files in `public/`
 - shadcn/ui: `npx shadcn@latest add <component>` (config in `components.json`)
 - Deploy: `.github/workflows/deploy.yml` on push to `main`. Pages source must be set to **GitHub Actions**.
+  `DEPLOY_TARGET: legacy` keeps the 2022 site live during the revamp; set it to `astro` at cutover.
 - `legacy/`: the 2022 site, kept for reference until cutover.

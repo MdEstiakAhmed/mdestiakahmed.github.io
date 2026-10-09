@@ -14,12 +14,31 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  # What goes live on estiak.me. Keep "legacy" (the 2022 site in legacy/) while the
+  # revamp is in progress; switch to "astro" at cutover.
+  DEPLOY_TARGET: legacy
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: withastro/action@v6
+
+      - name: Stage legacy site
+        if: env.DEPLOY_TARGET == 'legacy'
+        run: |
+          mkdir _site
+          cp -R legacy/. _site/
+          cp public/CNAME _site/CNAME
+          touch _site/.nojekyll
+      - if: env.DEPLOY_TARGET == 'legacy'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - if: env.DEPLOY_TARGET == 'astro'
+        uses: withastro/action@v6
         with:
           node-version: 22
 
