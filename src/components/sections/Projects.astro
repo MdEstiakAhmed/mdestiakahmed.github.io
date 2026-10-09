@@ -5,61 +5,152 @@ import { ArrowUpRight } from 'lucide-react';
 import Section from '@/components/ui/Section.astro';
 import Tag from '@/components/ui/Tag.astro';
 import { projects } from '@/data/site-data';
+
+const timelines = projects.map((_, i) => `--project-${i}`);
+const sizes = '(min-width: 768px) 560px, 100vw';
 ---
 
 <Section id="projects" eyebrow="Projects" title="Selected freelance work">
-  <ul class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-    {projects.map((p) => (
-      <li class="flex flex-col overflow-hidden rounded-2xl border bg-card">
-        <div class="aspect-[16/10] overflow-hidden border-b">
-          <Image
-            src={p.image.light}
-            alt={`${p.title} logo`}
-            widths={[400, 640, 800]}
-            sizes="(min-width: 1024px) 360px, (min-width: 768px) 50vw, 100vw"
-            class="size-full object-cover dark:hidden"
-          />
-          <Image
-            src={p.image.dark}
-            alt=""
-            aria-hidden="true"
-            widths={[400, 640, 800]}
-            sizes="(min-width: 1024px) 360px, (min-width: 768px) 50vw, 100vw"
-            class="hidden size-full object-cover dark:block"
-          />
-        </div>
-        <div class="flex flex-1 flex-col gap-4 p-6">
-          <div class="flex items-center justify-between gap-3">
-            <h3 class="text-lg font-semibold">{p.title}</h3>
-            <span class="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
-              {p.role}
+  <ul class="stack" style={`--n: ${projects.length}; timeline-scope: ${timelines.join(', ')};`}>
+    {projects.map((p, i) => (
+      <li
+        class="stack-item"
+        style={`--i: ${i}; --self: ${timelines[i]}; --next: ${timelines[i + 1] ?? 'none'};`}
+      >
+        <article
+          data-spotlight
+          class:list={[
+            'stack-card group relative grid overflow-hidden rounded-3xl border bg-card shadow-xl shadow-black/5 md:grid-cols-[1.1fr_1fr] dark:shadow-black/40',
+            i < projects.length - 1 && 'has-next',
+          ]}
+        >
+          <div class="relative aspect-[16/10] overflow-hidden border-b md:aspect-auto md:border-r md:border-b-0">
+            <Image
+              src={p.image.light}
+              alt={`${p.title} logo`}
+              widths={[480, 800, 1120]}
+              sizes={sizes}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 dark:hidden"
+            />
+            <Image
+              src={p.image.dark}
+              alt=""
+              aria-hidden="true"
+              widths={[480, 800, 1120]}
+              sizes={sizes}
+              class="hidden size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 dark:block"
+            />
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute bottom-3 left-5 font-mono text-6xl font-bold text-foreground/10 md:text-8xl"
+            >
+              {String(i + 1).padStart(2, '0')}
             </span>
           </div>
-          <p class="text-sm text-muted-foreground">{p.summary}</p>
-          <ul class="list-disc space-y-1 pl-5 text-sm text-muted-foreground marker:text-primary">
-            {p.highlights.map((h) => (
-              <li>{h}</li>
-            ))}
-          </ul>
-          <div class="flex flex-wrap gap-2">
-            {p.stack.map((t) => (
-              <Tag>{t}</Tag>
-            ))}
+
+          <div class="flex flex-col gap-5 p-6 md:p-8 lg:p-10">
+            <div class="flex flex-wrap items-center gap-2 text-xs font-medium">
+              <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-primary">{p.role}</span>
+              <span class="rounded-full bg-secondary px-2.5 py-0.5 text-secondary-foreground">
+                {p.type}
+              </span>
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-2xl font-bold tracking-tight md:text-3xl">{p.title}</h3>
+              <p class="text-muted-foreground">{p.summary}</p>
+            </div>
+            <ul class="space-y-2 text-sm">
+              {p.highlights.map((h) => (
+                <li class="flex gap-2.5">
+                  <span class="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                  <span>{h}</span>
+                </li>
+              ))}
+            </ul>
+            <div class="flex flex-wrap gap-2">
+              {p.stack.map((t) => (
+                <Tag>{t}</Tag>
+              ))}
+            </div>
+            <div class="mt-auto flex flex-wrap gap-3 pt-2">
+              {p.links.map((l) => (
+                <a
+                  href={l.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="group/link inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
+                >
+                  {l.label}
+                  <ArrowUpRight
+                    className="size-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
+                    aria-hidden="true"
+                  />
+                  <span class="sr-only">(opens in a new tab)</span>
+                </a>
+              ))}
+            </div>
           </div>
-          <div class="mt-auto flex flex-wrap gap-x-4 gap-y-2 pt-2">
-            {p.links.map((l) => (
-              <a
-                href={l.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-              >
-                {l.label} <ArrowUpRight className="size-3.5" aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-        </div>
+
+          <span
+            aria-hidden="true"
+            class="stack-shade pointer-events-none absolute inset-0 bg-background opacity-0"
+          />
+        </article>
       </li>
     ))}
   </ul>
 </Section>
+
+<style>
+  .stack {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  /* Stack only where a whole card fits on screen, so a pinned card never hides its own content. */
+  @media (min-width: 768px) and (min-height: 640px) {
+    .stack {
+      --stick: 6rem;
+      gap: 0;
+    }
+    .stack-item {
+      position: sticky;
+      top: calc(var(--stick) + var(--i) * 1.5rem);
+      /* Scroll room between cards; on the last one it lets the stack settle before it moves on. */
+      padding-bottom: 18vh;
+      view-timeline-name: var(--self);
+    }
+    .stack-card {
+      min-height: min(30rem, calc(100vh - 10rem));
+      transform-origin: 50% 0;
+    }
+
+    @supports (animation-timeline: view()) {
+      @media (prefers-reduced-motion: no-preference) {
+        /* A card recedes while the next one rides up over it, from entering the viewport to pinning. */
+        .stack-card.has-next {
+          animation: recede linear both;
+          animation-timeline: var(--tl, var(--next)); /* var(): see global.css .reveal */
+          animation-range: entry 0% cover calc(100vh - var(--stick));
+        }
+        .stack-card.has-next .stack-shade {
+          animation: shade linear both;
+          animation-timeline: var(--tl, var(--next));
+          animation-range: entry 0% cover calc(100vh - var(--stick));
+        }
+      }
+    }
+  }
+
+  @keyframes recede {
+    to {
+      transform: scale(calc(1 - (var(--n) - var(--i)) * 0.03));
+    }
+  }
+  @keyframes shade {
+    to {
+      opacity: 0.45;
+    }
+  }
+</style>
