@@ -20,15 +20,17 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     Skip to content
   </a>
   <Header />
-  <main id="main" class="mx-auto max-w-6xl px-4 sm:px-6">
+  <main id="main">
     <Hero />
-    <About />
-    <Experience />
-    <Projects />
-    <Skills />
-    <Services />
-    <Education />
-    <Contact />
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <About />
+      <Experience />
+      <Projects />
+      <Skills />
+      <Services />
+      <Education />
+      <Contact />
+    </div>
   </main>
   <Footer />
 </BaseLayout>

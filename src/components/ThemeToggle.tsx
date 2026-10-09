@@ -1,22 +1,10 @@
 import { Moon, Sun } from 'lucide-react';
-import { useSyncExternalStore } from 'react';
 
-import { applyTheme, type Theme } from '@/lib/theme';
-
-// The <html> class (set pre-paint in BaseLayout) is the source of truth.
-function subscribe(onChange: () => void): () => void {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-  return () => observer.disconnect();
-}
-
-const getSnapshot = (): Theme =>
-  document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-
-const getServerSnapshot = (): Theme | null => null;
+import { applyTheme } from '@/lib/theme';
+import { useTheme } from '@/lib/use-theme';
 
 export default function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const theme = useTheme();
 
   return (
     <button

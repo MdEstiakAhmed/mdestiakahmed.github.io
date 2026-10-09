@@ -1,66 +1,191 @@
 ---
-import { Image } from 'astro:assets';
 import { ArrowDown, Download } from 'lucide-react';
 
+import HeroCanvas from '@/components/hero/HeroCanvas';
+import TypingRoles from '@/components/hero/TypingRoles';
 import SocialLinks from '@/components/SocialLinks.astro';
 import { profile } from '@/data/site-data';
-import avatar from '@/assets/estiak-800.webp';
+
+// Letters are split for the staggered reveal; the real text stays readable via sr-only.
+const words = profile.name.split(' ');
+let letterIndex = 0;
 ---
 
-<section
-  id="home"
-  aria-label="Intro"
-  class="grid min-h-[calc(100dvh-4rem)] items-center gap-12 py-16 md:grid-cols-[1fr_auto]"
->
-  <div class="space-y-7">
-    {profile.availability.open && (
-      <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-        <span class="relative flex size-2">
-          <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-          <span class="relative inline-flex size-2 rounded-full bg-emerald-500" />
-        </span>
-        {profile.availability.label}
+<div id="hero-track" class="hero-track relative">
+  <section
+    id="home"
+    aria-label="Intro"
+    class="hero-pin relative isolate flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden"
+  >
+    <!-- Static poster: always rendered, sits under the WebGL scene and is all you see without it. -->
+    <div aria-hidden="true" class="hero-poster absolute inset-0 -z-10"></div>
+    <div class="absolute inset-0 -z-10 opacity-60 md:left-[42%] md:opacity-100">
+      <HeroCanvas client:only="react" trackId="hero-track" />
+    </div>
+
+    <div class="hero-content mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+      <div class="max-w-2xl space-y-7">
+        {profile.availability.open && (
+          <span class="hero-fade inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur [--d:0ms]">
+            <span class="relative flex size-2">
+              <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+              <span class="relative inline-flex size-2 rounded-full bg-emerald-500" />
+            </span>
+            {profile.availability.label}
+          </span>
+        )}
+        <div class="space-y-4">
+          <h1 class="text-5xl font-bold tracking-tight sm:text-7xl">
+            <span class="sr-only">{profile.name}</span>
+            <span aria-hidden="true" class="flex flex-wrap gap-x-[0.25em]">
+              {words.map((word) => (
+                <span class="inline-flex overflow-hidden pb-[0.1em]">
+                  {[...word].map((ch) => (
+                    <span class="hero-letter inline-block" style={`--i:${letterIndex++}`}>
+                      {ch}
+                    </span>
+                  ))}
+                </span>
+              ))}
+            </span>
+          </h1>
+          <p class="hero-fade text-xl font-medium sm:text-2xl [--d:700ms]">
+            <span class="text-foreground">{profile.title}</span>
+            <span class="block min-h-[1.5em] text-primary">
+              <span class="sr-only">{profile.typingRoles.join(', ')}</span>
+              <TypingRoles client:idle roles={profile.typingRoles} />
+            </span>
+          </p>
+        </div>
+        <p class="hero-fade max-w-xl text-lg text-muted-foreground [--d:850ms]">
+          {profile.tagline}
+        </p>
+        <div class="hero-fade flex flex-wrap gap-3 [--d:1000ms]">
+          <a
+            href="#projects"
+            data-magnetic
+            class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-[opacity,translate] hover:opacity-90"
+          >
+            View projects <ArrowDown className="size-4" aria-hidden="true" />
+          </a>
+          <a
+            href={profile.cv}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-magnetic
+            class="inline-flex items-center gap-2 rounded-full border bg-background/60 px-6 py-3 text-sm font-medium backdrop-blur transition-colors hover:bg-accent"
+          >
+            <Download className="size-4" aria-hidden="true" /> Download CV
+          </a>
+          <a
+            href="#contact"
+            data-magnetic
+            class="inline-flex items-center rounded-full px-6 py-3 text-sm font-medium text-primary hover:underline"
+          >
+            Hire me
+          </a>
+        </div>
+        <div class="hero-fade [--d:1150ms]">
+          <SocialLinks only={['github', 'linkedin', 'x']} />
+        </div>
+      </div>
+    </div>
+
+    <a
+      href="#about"
+      aria-label="Scroll to about"
+      class="hero-fade absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs text-muted-foreground [--d:1400ms] md:flex"
+    >
+      <span class="flex h-9 w-5 justify-center rounded-full border border-current pt-1.5">
+        <span class="hero-scroll-dot size-1 rounded-full bg-current"></span>
       </span>
-    )}
-    <div class="space-y-3">
-      <h1 class="text-5xl font-bold tracking-tight sm:text-7xl">{profile.name}</h1>
-      <p class="text-xl font-medium text-primary sm:text-2xl">
-        {profile.title}
-        <span class="sr-only">, {profile.typingRoles.join(', ')}</span>
-      </p>
-    </div>
-    <p class="max-w-xl text-lg text-muted-foreground">{profile.tagline}</p>
-    <div class="flex flex-wrap gap-3">
-      <a
-        href="#projects"
-        class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-      >
-        View projects <ArrowDown className="size-4" aria-hidden="true" />
-      </a>
-      <a
-        href={profile.cv}
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition-colors hover:bg-accent"
-      >
-        <Download className="size-4" aria-hidden="true" /> Download CV
-      </a>
-      <a
-        href="#contact"
-        class="inline-flex items-center rounded-full px-6 py-3 text-sm font-medium text-primary hover:underline"
-      >
-        Hire me
-      </a>
-    </div>
-    <SocialLinks only={['github', 'linkedin', 'x']} />
-  </div>
-  <Image
-    src={avatar}
-    alt={`Portrait of ${profile.name}`}
-    widths={[224, 320, 448]}
-    sizes="(min-width: 640px) 320px, 224px"
-    loading="eager"
-    fetchpriority="high"
-    class="mx-auto size-56 rounded-full object-cover ring-1 ring-border sm:size-80"
-  />
-</section>
+      Scroll
+    </a>
+  </section>
+</div>
+
+<style>
+  .hero-poster {
+    background:
+      radial-gradient(
+        40rem 32rem at 72% 45%,
+        color-mix(in oklch, var(--primary) 22%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        28rem 22rem at 85% 70%,
+        color-mix(in oklch, #22d3ee 12%, transparent),
+        transparent 70%
+      );
+  }
+
+  /* With the 3D scene on, the hero pins while the particles morph through the shapes. */
+  :global(html.hero-3d) .hero-track {
+    height: 320vh;
+  }
+  :global(html.hero-3d) .hero-pin {
+    position: sticky;
+    top: 4rem;
+    height: calc(100dvh - 4rem);
+  }
+  :global(html.hero-3d) .hero-content {
+    opacity: calc(1 - max(0, var(--hero-progress, 0) - 0.85) * 6.6);
+  }
+
+  .hero-letter {
+    animation: hero-letter 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) both;
+    animation-delay: calc(var(--i) * 35ms + 100ms);
+  }
+  .hero-fade {
+    animation: hero-fade 0.8s cubic-bezier(0.2, 0.7, 0.1, 1) both;
+    animation-delay: var(--d, 0ms);
+  }
+  .hero-scroll-dot {
+    animation: hero-scroll 1.8s ease-in-out infinite;
+  }
+
+  @keyframes hero-letter {
+    from {
+      transform: translateY(105%) rotate(6deg);
+      opacity: 0;
+    }
+  }
+  @keyframes hero-fade {
+    from {
+      transform: translateY(16px);
+      opacity: 0;
+    }
+  }
+  @keyframes hero-scroll {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    70% {
+      transform: translateY(12px);
+      opacity: 0;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  // Magnetic CTAs: buttons drift toward the cursor. Fine pointers only, off for reduced motion.
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (canHover && !reduced) {
+    for (const el of document.querySelectorAll<HTMLElement>('[data-magnetic]')) {
+      el.addEventListener('pointermove', (e) => {
+        const r = el.getBoundingClientRect();
+        const x = (e.clientX - r.left - r.width / 2) * 0.25;
+        const y = (e.clientY - r.top - r.height / 2) * 0.35;
+        el.style.translate = `${x}px ${y}px`;
+      });
+      el.addEventListener('pointerleave', () => {
+        el.style.translate = '';
+      });
+    }
+  }
+</script>

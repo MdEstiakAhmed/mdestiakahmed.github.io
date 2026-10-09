@@ -1,5 +1,8 @@
 ---
+import { Image } from 'astro:assets';
 import { GraduationCap, MapPin } from 'lucide-react';
+
+import avatar from '@/assets/estiak-800.webp';
 
 import Section from '@/components/ui/Section.astro';
 import { education, profile, stats } from '@/data/site-data';
@@ -10,6 +13,13 @@ const degree = education[0];
 <Section id="about" eyebrow="About" title="Frontend first, full-stack when it counts">
   <div class="grid gap-12 md:grid-cols-[3fr_2fr]">
     <div class="space-y-5 text-lg leading-relaxed text-muted-foreground">
+      <Image
+        src={avatar}
+        alt={`Portrait of ${profile.name}`}
+        widths={[160, 320]}
+        sizes="160px"
+        class="size-28 rounded-2xl object-cover ring-1 ring-border sm:size-36"
+      />
       {profile.bio.map((p) => (
         <p>{p}</p>
       ))}
