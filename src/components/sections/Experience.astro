@@ -1,4 +1,6 @@
 ---
+import { ChevronDown } from 'lucide-react';
+
 import Section from '@/components/ui/Section.astro';
 import Tag from '@/components/ui/Tag.astro';
 import { experience } from '@/data/site-data';
@@ -6,83 +8,221 @@ import { formatDuration, formatRange } from '@/lib/format';
 ---
 
 <Section id="experience" eyebrow="Experience" title="Where I've worked">
-  <ol class="relative space-y-12 border-l pl-8">
+  <ol class="timeline relative space-y-10 pl-10 md:pl-14">
     {experience.map((job) => {
       const first = job.positions.at(-1);
       const latest = job.positions[0];
+      const current = latest?.end === null;
       return (
         <li class="relative">
-          <span class="absolute top-1.5 -left-[2.4rem] size-3 rounded-full border-2 border-primary bg-background" />
-          <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <h3 class="text-xl font-semibold">
-              <a
-                href={job.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="hover:text-primary"
-              >
-                {job.company}
-              </a>
-            </h3>
-            {first && latest && (
-              <p class="text-sm text-muted-foreground">
-                {formatRange(first.start, latest.end)} · {formatDuration(first.start, latest.end)}
-              </p>
-            )}
-          </div>
-          {job.formerly && (
-            <p class="text-xs text-muted-foreground">Formerly {job.formerly.join(', ')}</p>
-          )}
-          <ul class="mt-3 space-y-1">
-            {job.positions.map((p) => (
-              <li class="flex flex-wrap justify-between gap-x-4 text-sm">
-                <span class="font-medium text-primary">{p.title}</span>
-                {job.positions.length > 1 && (
-                  <span class="text-muted-foreground">{formatRange(p.start, p.end)}</span>
+          <span
+            aria-hidden="true"
+            class:list={[
+              'timeline-dot absolute top-7 -left-10 grid size-5 place-items-center rounded-full border-2 bg-background md:-left-14',
+              current && 'is-current',
+            ]}
+          >
+            <span class="size-1.5 rounded-full bg-current" />
+          </span>
+          <article data-spotlight class="reveal rounded-3xl border bg-card p-6 md:p-8">
+            <header class="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+              <div>
+                <h3 class="text-xl font-semibold md:text-2xl">
+                  <a
+                    href={job.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="hover:text-primary"
+                  >
+                    {job.company}
+                  </a>
+                </h3>
+                {job.formerly && (
+                  <p class="mt-0.5 text-xs text-muted-foreground">
+                    Formerly {job.formerly.join(', ')}
+                  </p>
                 )}
-              </li>
-            ))}
-          </ul>
-          <ul class="mt-4 list-disc space-y-1.5 pl-5 text-muted-foreground marker:text-primary">
-            {job.bullets.map((b) => (
-              <li>{b}</li>
-            ))}
-          </ul>
-          {job.projects && (
-            <details class="group mt-4">
-              <summary class="cursor-pointer text-sm font-medium text-primary">
-                {job.projects.length} projects
-              </summary>
-              <ul class="mt-3 grid gap-3 sm:grid-cols-2">
-                {job.projects.map((wp) => (
-                  <li class="rounded-lg border bg-card p-4 text-sm">
-                    <p class="font-medium">
-                      {wp.url ? (
-                        <a
-                          href={wp.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="hover:text-primary"
-                        >
-                          {wp.name}
-                        </a>
-                      ) : (
-                        wp.name
-                      )}
-                    </p>
-                    <p class="mt-1 text-muted-foreground">{wp.description}</p>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-          <div class="mt-4 flex flex-wrap gap-2">
-            {job.stack.map((t) => (
-              <Tag>{t}</Tag>
-            ))}
-          </div>
+              </div>
+              {first && latest && (
+                <div class="text-right text-sm">
+                  <p class="font-medium">
+                    {current && (
+                      <span class="mr-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">
+                        <span class="size-1.5 rounded-full bg-current" />
+                        Now
+                      </span>
+                    )}
+                    {formatRange(first.start, latest.end)}
+                  </p>
+                  <p class="text-muted-foreground">
+                    {formatDuration(first.start, latest.end)} · {job.location}
+                  </p>
+                </div>
+              )}
+            </header>
+
+            <ol class="mt-5 space-y-2 border-l pl-4">
+              {job.positions.map((p, i) => (
+                <li class="flex flex-wrap items-baseline justify-between gap-x-4 text-sm">
+                  <span
+                    class:list={['font-medium', i === 0 ? 'text-primary' : 'text-muted-foreground']}
+                  >
+                    {p.title}
+                  </span>
+                  {job.positions.length > 1 && (
+                    <span class="text-xs text-muted-foreground">{formatRange(p.start, p.end)}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+
+            <ul class="mt-5 space-y-2 text-muted-foreground">
+              {job.bullets.map((b) => (
+                <li class="flex gap-3">
+                  <span
+                    aria-hidden="true"
+                    class="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary"
+                  />
+                  {b}
+                </li>
+              ))}
+            </ul>
+
+            {job.projects && (
+              <details class="projects group mt-6 rounded-2xl border bg-background/50">
+                <summary class="flex cursor-pointer list-none items-center justify-between px-5 py-3 text-sm font-medium select-none [&::-webkit-details-marker]:hidden">
+                  <span>
+                    Projects at {job.company.split(' ')[0]}{' '}
+                    <span class="text-muted-foreground">({job.projects.length})</span>
+                  </span>
+                  <ChevronDown
+                    className="size-4 transition-transform duration-300 group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <ul class="grid gap-3 px-5 pb-5 sm:grid-cols-2">
+                  {job.projects.map((wp) => (
+                    <li class="rounded-xl border bg-card p-4 text-sm">
+                      <p class="font-medium">
+                        {wp.url ? (
+                          <a
+                            href={wp.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="hover:text-primary"
+                          >
+                            {wp.name} ↗
+                          </a>
+                        ) : (
+                          wp.name
+                        )}
+                      </p>
+                      <p class="mt-1 text-muted-foreground">{wp.description}</p>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+
+            <div class="mt-6 flex flex-wrap gap-2">
+              {job.stack.map((t) => (
+                <Tag>{t}</Tag>
+              ))}
+            </div>
+          </article>
         </li>
       );
     })}
   </ol>
 </Section>
+
+<style>
+  /* Track + progress line. The fill is drawn by scroll where supported, else shown full. */
+  .timeline::before,
+  .timeline::after {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.6rem;
+    width: 2px;
+    border-radius: 2px;
+  }
+  @media (min-width: 768px) {
+    .timeline::before,
+    .timeline::after {
+      left: 1.6rem;
+    }
+  }
+  .timeline::before {
+    background: var(--border);
+  }
+  .timeline::after {
+    background: linear-gradient(var(--primary), #22d3ee);
+    transform-origin: top;
+  }
+
+  .timeline-dot {
+    color: var(--muted-foreground);
+    border-color: var(--border);
+    transition:
+      color 400ms,
+      border-color 400ms,
+      box-shadow 400ms;
+  }
+
+  @supports (animation-timeline: view()) {
+    .timeline {
+      view-timeline: --timeline block;
+    }
+    .timeline::after {
+      animation: draw linear both;
+      animation-timeline: var(--tl, --timeline); /* var(): see global.css .reveal */
+      /* Tip of the line tracks the middle of the viewport. */
+      animation-range: cover 50vh cover calc(100% - 50vh);
+    }
+    .timeline-dot {
+      animation: light linear both;
+      animation-timeline: var(--tl, view());
+      animation-range: cover 45% cover 50%;
+    }
+  }
+  @supports not (animation-timeline: view()) {
+    .timeline-dot {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+  }
+
+  .timeline-dot.is-current {
+    box-shadow: 0 0 0 6px color-mix(in oklch, var(--primary) 18%, transparent);
+  }
+
+  @keyframes draw {
+    from {
+      transform: scaleY(0);
+    }
+  }
+  @keyframes light {
+    to {
+      color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 6px color-mix(in oklch, var(--primary) 18%, transparent);
+    }
+  }
+
+  /* Smooth open/close where supported (interpolate-size + ::details-content). */
+  .projects {
+    interpolate-size: allow-keywords;
+  }
+  .projects::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 400ms cubic-bezier(0.2, 0.7, 0.1, 1),
+      content-visibility 400ms allow-discrete;
+  }
+  .projects[open]::details-content {
+    block-size: auto;
+  }
+</style>
