@@ -1,40 +1,104 @@
 ---
-import { Mail, MessageCircle } from 'lucide-react';
+import { Clock, MessageCircle } from 'lucide-react';
 
-import ContactForm from '@/components/ContactForm';
+import CopyEmail from '@/components/CopyEmail';
 import SocialLinks from '@/components/SocialLinks.astro';
-import Section from '@/components/ui/Section.astro';
-import { contact, profile } from '@/data/site-data';
+import TerminalForm from '@/components/TerminalForm';
+import { contact, now, profile } from '@/data/site-data';
 ---
 
-<Section id="contact" eyebrow="Contact" title={contact.heading}>
-  <div class="grid gap-12 md:grid-cols-2">
-    <div class="space-y-6">
-      <p class="text-lg text-muted-foreground">{contact.blurb}</p>
-      <ul class="space-y-3">
-        <li>
-          <a
-            href={`mailto:${profile.email}`}
-            class="inline-flex items-center gap-3 hover:text-primary"
+<section id="contact" aria-labelledby="contact-title" class="scroll-mt-24 py-20 md:py-28">
+  <div class="relative isolate overflow-hidden rounded-[2.5rem] border bg-card/40 px-6 py-14 sm:px-10 md:px-14 md:py-20">
+    <!-- Drifting glow behind the finale. -->
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+      <div class="glow glow-a"></div>
+      <div class="glow glow-b"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:22px_22px] opacity-50 [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]"></div>
+    </div>
+
+    <div class="grid gap-14 lg:grid-cols-[1.15fr_1fr] lg:items-center">
+      <div class="space-y-8">
+        <div class="space-y-4">
+          <p class="flex flex-wrap items-center gap-3 text-sm font-medium tracking-widest text-primary uppercase">
+            Contact
+            {profile.availability.open && (
+              <span class="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs tracking-normal text-emerald-600 normal-case dark:text-emerald-400">
+                <span class="relative flex size-2">
+                  <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                  <span class="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                </span>
+                {profile.availability.label}
+              </span>
+            )}
+          </p>
+          <h2
+            id="contact-title"
+            class="reveal text-5xl leading-[0.95] font-bold tracking-tight sm:text-6xl lg:text-7xl"
           >
-            <Mail className="size-5 text-primary" aria-hidden="true" />
-            {profile.email}
-          </a>
-        </li>
-        <li>
+            Let's build
+            <span class="block bg-gradient-to-r pb-2 from-primary via-sky-400 to-cyan-300 bg-clip-text text-transparent">
+              something great.
+            </span>
+          </h2>
+          <p class="max-w-md text-lg text-muted-foreground">{contact.blurb}</p>
+        </div>
+
+        <CopyEmail client:visible email={profile.email} />
+
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-4 text-sm">
           <a
             href={profile.whatsapp}
             target="_blank"
             rel="noopener noreferrer"
-            class="inline-flex items-center gap-3 hover:text-primary"
+            class="inline-flex items-center gap-2 font-medium hover:text-primary"
           >
-            <MessageCircle className="size-5 text-primary" aria-hidden="true" />
-            WhatsApp
+            <MessageCircle className="size-4 text-primary" aria-hidden="true" />
+            Message on WhatsApp
           </a>
-        </li>
-      </ul>
-      <SocialLinks />
+          <span class="inline-flex items-center gap-2 text-muted-foreground">
+            <Clock className="size-4" aria-hidden="true" />
+            <span data-clock={now.timeZone}>GMT+6</span> in Dhaka
+          </span>
+        </div>
+
+        <SocialLinks />
+      </div>
+
+      <TerminalForm client:visible action={contact.formAction} email={profile.email} />
     </div>
-    <ContactForm client:visible action={contact.formAction} />
   </div>
-</Section>
+</section>
+
+<style>
+  .glow {
+    position: absolute;
+    width: 32rem;
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.35;
+  }
+  .glow-a {
+    top: -10rem;
+    left: -8rem;
+    background: var(--primary);
+    animation: drift-a 18s ease-in-out infinite alternate;
+  }
+  .glow-b {
+    right: -10rem;
+    bottom: -12rem;
+    background: #22d3ee;
+    opacity: 0.22;
+    animation: drift-b 22s ease-in-out infinite alternate;
+  }
+  @keyframes drift-a {
+    to {
+      transform: translate(18rem, 8rem) scale(1.2);
+    }
+  }
+  @keyframes drift-b {
+    to {
+      transform: translate(-16rem, -6rem) scale(0.9);
+    }
+  }
+</style>
