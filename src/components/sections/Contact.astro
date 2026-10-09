@@ -1,0 +1,40 @@
+---
+import { Mail, MessageCircle } from 'lucide-react';
+
+import ContactForm from '@/components/ContactForm';
+import SocialLinks from '@/components/SocialLinks.astro';
+import Section from '@/components/ui/Section.astro';
+import { contact, profile } from '@/data/site-data';
+---
+
+<Section id="contact" eyebrow="Contact" title={contact.heading}>
+  <div class="grid gap-12 md:grid-cols-2">
+    <div class="space-y-6">
+      <p class="text-lg text-muted-foreground">{contact.blurb}</p>
+      <ul class="space-y-3">
+        <li>
+          <a
+            href={`mailto:${profile.email}`}
+            class="inline-flex items-center gap-3 hover:text-primary"
+          >
+            <Mail className="size-5 text-primary" aria-hidden="true" />
+            {profile.email}
+          </a>
+        </li>
+        <li>
+          <a
+            href={profile.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-3 hover:text-primary"
+          >
+            <MessageCircle className="size-5 text-primary" aria-hidden="true" />
+            WhatsApp
+          </a>
+        </li>
+      </ul>
+      <SocialLinks />
+    </div>
+    <ContactForm client:visible action={contact.formAction} />
+  </div>
+</Section>

@@ -1,0 +1,19 @@
+---
+import Section from '@/components/ui/Section.astro';
+import { skills } from '@/data/site-data';
+---
+
+<Section id="skills" eyebrow="Skills" title="What I work with">
+  <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {skills.map((g) => (
+      <div class="rounded-2xl border bg-card p-6">
+        <h3 class="mb-4 font-semibold">{g.group}</h3>
+        <ul class="flex flex-wrap gap-2">
+          {g.items.map((item) => (
+            <li class="rounded-full border px-3 py-1 text-sm text-muted-foreground">{item}</li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</Section>
