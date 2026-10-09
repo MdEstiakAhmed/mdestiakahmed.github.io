@@ -88,25 +88,36 @@ export default function HeroCanvas({ trackId }: Props) {
       className="absolute inset-0 transition-opacity duration-1000"
       style={{ opacity: ready ? 1 : 0 }}
     >
+      {/* Step index for the morph: numbered stepper with a filling rail. */}
       <ol
         aria-hidden="true"
-        className="absolute right-6 bottom-8 z-10 hidden flex-col items-end gap-2 font-mono text-xs md:flex"
+        className="bg-background/60 absolute right-6 bottom-8 z-10 hidden flex-col gap-3 rounded-2xl border p-4 text-sm backdrop-blur-md md:flex"
       >
+        <span className="bg-border absolute top-7 bottom-7 left-[calc(1.75rem-0.5px)] w-px" />
+        <span
+          className="bg-primary absolute top-7 left-[calc(1.75rem-0.5px)] w-px transition-[height] duration-500"
+          style={{ height: `calc((100% - 3.5rem) * ${active / (shapes.length - 1)})` }}
+        />
         {shapes.map((s, i) => (
-          <li
-            key={s.id}
-            className={cn(
-              'flex items-center gap-2 transition-all duration-500',
-              i === active ? 'text-primary' : 'text-muted-foreground/50',
-            )}
-          >
-            {s.label}
+          <li key={s.id} className="relative flex items-center gap-3">
             <span
               className={cn(
-                'h-px bg-current transition-all duration-500',
-                i === active ? 'w-8' : 'w-3',
+                'grid size-6 place-items-center rounded-full border font-mono text-[11px] tabular-nums transition-colors duration-500',
+                i === active && 'border-primary bg-primary text-primary-foreground',
+                i < active && 'border-primary bg-background text-primary',
+                i > active && 'bg-background text-muted-foreground',
               )}
-            />
+            >
+              {i + 1}
+            </span>
+            <span
+              className={cn(
+                'transition-colors duration-500',
+                i === active ? 'text-foreground font-medium' : 'text-muted-foreground',
+              )}
+            >
+              {s.label}
+            </span>
           </li>
         ))}
       </ol>
