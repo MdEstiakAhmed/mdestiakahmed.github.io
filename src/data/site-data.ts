@@ -81,6 +81,7 @@ export const yearsOfExperience = (now: Date = new Date()): number =>
 
 export const profile = {
   name: 'Md. Estiak Ahmed',
+  shortName: 'Estiak',
   title: 'Frontend-focused Full-Stack Engineer',
   typingRoles: ['Frontend Wizard', 'Code Craftsman'],
   tagline: 'React, Next.js, TypeScript and NestJS. Based in Dhaka, Bangladesh.',
@@ -97,11 +98,24 @@ export const profile = {
   ],
 } as const;
 
-export const stats = [
-  { label: 'Years Experience', value: () => `${yearsOfExperience()}+` },
-  { label: 'Clients', value: () => '7+' },
-  { label: 'Projects', value: () => '12+' },
-] as const;
+export interface Stat {
+  label: string;
+  value: () => number;
+  suffix: string;
+}
+
+export const stats: Stat[] = [
+  { label: 'Years Experience', value: () => yearsOfExperience(), suffix: '+' },
+  { label: 'Clients', value: () => 7, suffix: '+' },
+  { label: 'Projects', value: () => 12, suffix: '+' },
+];
+
+/** Shown in the About bento "currently" tile. */
+export const now = {
+  company: 'Vivasoft',
+  building: 'Stickler, a live-stream analytics dashboard',
+  timeZone: 'Asia/Dhaka',
+} as const;
 
 export const socials: Social[] = [
   { id: 'github', label: 'GitHub', href: 'https://github.com/MdEstiakAhmed' },
