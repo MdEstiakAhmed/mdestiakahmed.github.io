@@ -2,155 +2,570 @@
 import { Image } from 'astro:assets';
 import { ArrowUpRight } from 'lucide-react';
 
-import Section from '@/components/ui/Section.astro';
 import Tag from '@/components/ui/Tag.astro';
 import { projects } from '@/data/site-data';
 
-const timelines = projects.map((_, i) => `--project-${i}`);
 const sizes = '(min-width: 768px) 560px, 100vw';
+// One hue per card (oklch degrees): blue (brand), cyan, teal, amber, coral, rose.
+const hues = [255, 215, 175, 80, 28, 350];
+const pad = (n: number) => String(n).padStart(2, '0');
+const total = projects.length;
+// Where the counter sits in its own sequence, so the first and last numerals stay lit at the ends.
+const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid');
 ---
 
-<Section id="projects" eyebrow="Projects" title="Selected freelance work">
-  <ul class="stack" style={`--n: ${projects.length}; timeline-scope: ${timelines.join(', ')};`}>
-    {projects.map((p, i) => (
-      <li
-        class="stack-item"
-        style={`--i: ${i}; --self: ${timelines[i]}; --next: ${timelines[i + 1] ?? 'none'};`}
-      >
-        <article
-          data-spotlight
-          class:list={[
-            'stack-card group relative grid overflow-hidden rounded-3xl border bg-card shadow-xl shadow-black/5 md:grid-cols-[1.1fr_1fr] dark:shadow-black/40',
-            i < projects.length - 1 && 'has-next',
-          ]}
-        >
-          <div class="relative aspect-[16/10] overflow-hidden border-b md:aspect-auto md:border-r md:border-b-0">
-            <Image
-              src={p.image.light}
-              alt={`${p.title} logo`}
-              widths={[480, 800, 1120]}
-              sizes={sizes}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 dark:hidden"
-            />
-            <Image
-              src={p.image.dark}
-              alt=""
-              aria-hidden="true"
-              widths={[480, 800, 1120]}
-              sizes={sizes}
-              class="hidden size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 dark:block"
-            />
-            <span
-              aria-hidden="true"
-              class="pointer-events-none absolute bottom-3 left-5 font-mono text-6xl font-bold text-foreground/10 md:text-8xl"
-            >
-              {String(i + 1).padStart(2, '0')}
+<!-- Section's markup inlined so the heading and progress pin with the horizontal track. -->
+<section id="projects" aria-labelledby="projects-title" class="scroll-mt-24 py-20 md:py-28">
+  <div class="pj-track" style={`--n: ${total}`}>
+    <div class="pj-pin">
+      <div class="pj-head">
+        <header class="pj-title-block max-w-2xl space-y-2">
+          <p class="text-sm font-medium tracking-widest text-primary uppercase">Projects</p>
+          <h2 id="projects-title" class="text-3xl font-bold tracking-tight sm:text-4xl">
+            Selected freelance work
+          </h2>
+        </header>
+
+        <!-- Progress: decorative, shown only while the section is pinned. -->
+        <div class="pj-prog" aria-hidden="true">
+          <span class="pj-count">
+            <span class="pj-cur-stack">
+              {projects.map((_, i) => (
+                <span class="pj-cur" data-edge={edge(i)} style={`--i: ${i}`}>
+                  {pad(i + 1)}
+                </span>
+              ))}
             </span>
-          </div>
+            <span class="pj-of">/ {pad(total)}</span>
+          </span>
+          <span class="pj-rail">
+            <span class="pj-rail-fill"></span>
+          </span>
+        </div>
+      </div>
 
-          <div class="flex flex-col gap-5 p-6 md:p-8 lg:p-10">
-            <div class="flex flex-wrap items-center gap-2 text-xs font-medium">
-              <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-primary">{p.role}</span>
-              <span class="rounded-full bg-secondary px-2.5 py-0.5 text-secondary-foreground">
-                {p.type}
-              </span>
-            </div>
-            <div class="space-y-2">
-              <h3 class="text-2xl font-bold tracking-tight md:text-3xl">{p.title}</h3>
-              <p class="text-muted-foreground">{p.summary}</p>
-            </div>
-            <ul class="space-y-2 text-sm">
-              {p.highlights.map((h) => (
-                <li class="flex gap-2.5">
-                  <span class="mt-2 size-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
-                  <span>{h}</span>
-                </li>
-              ))}
-            </ul>
-            <div class="flex flex-wrap gap-2">
-              {p.stack.map((t) => (
-                <Tag>{t}</Tag>
-              ))}
-            </div>
-            <div class="mt-auto flex flex-wrap gap-3 pt-2">
-              {p.links.map((l) => (
-                <a
-                  href={l.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="group/link inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
-                >
-                  {l.label}
-                  <ArrowUpRight
-                    className="size-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
-                    aria-hidden="true"
-                  />
-                  <span class="sr-only">(opens in a new tab)</span>
-                </a>
-              ))}
-            </div>
-          </div>
+      <div class="pj-viewport">
+        <ul class="pj-row">
+          {projects.map((p, i) => (
+            <li class="pj-card" style={`--i: ${i}; --h: ${hues[i % hues.length]}`}>
+              <article data-spotlight data-tilt="2" class="pj-body group">
+                <div class="pj-media">
+                  <div class="pj-img">
+                    <Image
+                      src={p.image.light}
+                      alt={`${p.title} logo`}
+                      widths={[480, 800, 1120]}
+                      sizes={sizes}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      class="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 dark:hidden"
+                    />
+                    <Image
+                      src={p.image.dark}
+                      alt=""
+                      aria-hidden="true"
+                      widths={[480, 800, 1120]}
+                      sizes={sizes}
+                      class="hidden size-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 dark:block"
+                    />
+                  </div>
+                </div>
 
-          <span
-            aria-hidden="true"
-            class="stack-shade pointer-events-none absolute inset-0 bg-background opacity-0"
-          />
-        </article>
-      </li>
-    ))}
-  </ul>
-</Section>
+                <div class="pj-text">
+                  <span class="pj-num" aria-hidden="true">
+                    {pad(i + 1)}
+                  </span>
+
+                  <div
+                    class="pj-in flex flex-wrap items-center gap-2 text-xs font-medium"
+                    style="--s: 0"
+                  >
+                    <span class="pj-chip pj-chip-role">{p.role}</span>
+                    <span class="pj-chip">{p.type}</span>
+                  </div>
+                  <div class="pj-in space-y-2" style="--s: 1">
+                    <h3 class="pj-h3">{p.title}</h3>
+                    <p class="pj-sum">{p.summary}</p>
+                  </div>
+                  <ul class="pj-in pj-hl" style="--s: 2">
+                    {p.highlights.map((h) => (
+                      <li class="flex gap-2.5">
+                        <span
+                          class="mt-2 size-1.5 shrink-0 rounded-full bg-[var(--tint)]"
+                          aria-hidden="true"
+                        />
+                        <span>{h}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div class="pj-in flex flex-wrap gap-2" style="--s: 3">
+                    {p.stack.map((t) => (
+                      <Tag>{t}</Tag>
+                    ))}
+                  </div>
+                  <div class="pj-in pj-links" style="--s: 4">
+                    {p.links.map((l) => (
+                      <a
+                        href={l.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="pj-link group/link"
+                      >
+                        {l.label}
+                        <ArrowUpRight
+                          className="size-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
+                          aria-hidden="true"
+                        />
+                        <span class="sr-only">(opens in a new tab)</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
 <style>
-  .stack {
+  /* ---- Base: stacked cards, each sliding in from the right as it enters the viewport. ---- */
+  .pj-head {
+    margin-bottom: 3rem;
+  }
+  .pj-prog {
+    display: none;
+  }
+  .pj-row {
     display: grid;
     gap: 1.5rem;
   }
+  .pj-card {
+    min-width: 0;
+  }
 
-  /* Stack only where a whole card fits on screen, so a pinned card never hides its own content. */
-  @media (min-width: 768px) and (min-height: 640px) {
-    .stack {
-      --stick: 6rem;
-      gap: 0;
-    }
-    .stack-item {
-      position: sticky;
-      top: calc(var(--stick) + var(--i) * 1.5rem);
-      /* Scroll room between cards; on the last one it lets the stack settle before it moves on. */
-      padding-bottom: 18vh;
-      view-timeline-name: var(--self);
-    }
-    .stack-card {
-      min-height: min(30rem, calc(100vh - 10rem));
-      transform-origin: 50% 0;
-    }
+  /* Hue-glass tile, same recipe as About/Skills; --h is set per card. */
+  .pj-body {
+    --tint: oklch(0.6 0.15 var(--h, 255));
+    position: relative;
+    display: grid;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--tint) 32%, var(--border));
+    border-radius: 1.75rem;
+    background:
+      radial-gradient(
+        28rem 14rem at 100% 0%,
+        color-mix(in oklab, var(--tint) 16%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(150deg, color-mix(in oklab, var(--tint) 9%, var(--card)), var(--card) 70%);
+    box-shadow: 0 18px 40px -24px color-mix(in oklab, var(--tint) 45%, transparent);
+  }
+  :global(.dark) .pj-body {
+    --tint: oklch(0.76 0.14 var(--h, 255));
+  }
+  .pj-body[data-spotlight]::before {
+    background: radial-gradient(
+      20rem circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in oklab, var(--tint) 20%, transparent),
+      transparent 70%
+    );
+  }
 
-    @supports (animation-timeline: view()) {
-      @media (prefers-reduced-motion: no-preference) {
-        /* A card recedes while the next one rides up over it, from entering the viewport to pinning. */
-        .stack-card.has-next {
-          animation: recede linear both;
-          animation-timeline: var(--tl, var(--next)); /* var(): see global.css .reveal */
-          animation-range: entry 0% cover calc(100vh - var(--stick));
+  .pj-media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-bottom: 1px solid color-mix(in oklab, var(--tint) 25%, var(--border));
+  }
+  .pj-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .pj-text {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+    padding: 1.5rem;
+  }
+  .pj-num {
+    position: absolute;
+    top: 0.9rem;
+    right: 1.25rem;
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    color: transparent;
+    -webkit-text-stroke: 1.5px color-mix(in oklab, var(--tint) 70%, transparent);
+    pointer-events: none;
+  }
+  .pj-chip {
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+  }
+  .pj-chip-role {
+    background: color-mix(in oklab, var(--tint) 16%, transparent);
+    color: var(--foreground);
+    border: 1px solid color-mix(in oklab, var(--tint) 40%, transparent);
+  }
+  .pj-h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .pj-sum {
+    color: var(--muted-foreground);
+  }
+  .pj-hl {
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+  .pj-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+  }
+  .pj-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    border: 1px solid color-mix(in oklab, var(--foreground) 30%, transparent);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition:
+      background-color 200ms,
+      color 200ms,
+      border-color 200ms;
+  }
+  .pj-link:hover {
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+  }
+  .pj-link:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+
+  @media (min-width: 768px) {
+    .pj-body {
+      grid-template-columns: 0.9fr 1.1fr;
+    }
+    .pj-media {
+      aspect-ratio: auto;
+      border-bottom: 0;
+      border-right: 1px solid color-mix(in oklab, var(--tint) 25%, var(--border));
+    }
+    .pj-text {
+      padding: 2rem;
+    }
+    .pj-h3 {
+      font-size: 1.875rem;
+    }
+    .pj-num {
+      font-size: 5rem;
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      /* Small and short screens: each card slides in from the right as it enters. */
+      .pj-card {
+        animation: pj-slide cubic-bezier(0.23, 1, 0.32, 1) both;
+        animation-timeline: view(); /* literal view(): this card is its own subject */
+        animation-range: entry 0% entry 75%;
+      }
+    }
+  }
+
+  /* ---- Pinned track: wide, tall screens. Vertical scroll drives the row sideways. ---- */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      @media (min-width: 1024px) and (min-height: 700px) {
+        .pj-track {
+          --stick: 4.5rem;
+          /* Scroll per card, in vh. Raise it for a slower, longer track. */
+          --slot-vh: 75;
+          --slot: calc(var(--slot-vh) * 1vh);
+          /* Extra scroll after the last card lands, so it rests in focus before the pin lets go. */
+          --tail: 14vh;
+          --hold: calc((var(--n) - 1) * var(--slot) + var(--tail));
+          /* Scroll position (in cover terms) at which the pin engages. */
+          --base: calc(100vh - var(--stick));
+          --w: min(58rem, 100vw - 9rem);
+          --gap: 2rem;
+          --step: calc(var(--w) + var(--gap));
+          view-timeline: --pj block;
         }
-        .stack-card.has-next .stack-shade {
-          animation: shade linear both;
-          animation-timeline: var(--tl, var(--next));
-          animation-range: entry 0% cover calc(100vh - var(--stick));
+        /* Scroll room for the track. A child, not padding: sticky stops at the content box. */
+        .pj-track::after {
+          content: '';
+          display: block;
+          height: var(--hold);
+        }
+        .pj-pin {
+          position: sticky;
+          top: var(--stick);
+          display: flex;
+          flex-direction: column;
+          height: calc(100vh - var(--stick) - 1.25rem);
+        }
+        .pj-head {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 2rem;
+          margin-bottom: 1.25rem;
+        }
+
+        /* Full-bleed window; the first card still lines up with the page column. */
+        .pj-viewport {
+          flex: 1;
+          min-height: 0;
+          margin-inline: calc(50% - 50vw);
+          padding-inline: calc(50vw - 50%);
+          overflow-x: clip;
+          overflow-y: visible;
+        }
+        .pj-row {
+          display: flex;
+          gap: var(--gap);
+          width: max-content;
+          height: 100%;
+          animation: pj-travel linear both;
+          animation-timeline: --pj;
+          animation-range: cover var(--base) cover calc(var(--base) + (var(--n) - 1) * var(--slot));
+        }
+        .pj-card {
+          --f: calc(var(--base) + var(--i) * var(--slot));
+          flex: 0 0 var(--w);
+          height: 100%;
+          /* Sharp and full size in focus, smaller, dimmer and softer as it arrives or leaves. */
+          animation: pj-focus linear both;
+          animation-timeline: --pj;
+          animation-range: cover calc(var(--f) - var(--slot)) cover calc(var(--f) + var(--slot));
+        }
+        .pj-body {
+          grid-template-columns: 0.85fr 1.15fr;
+        }
+        .pj-media {
+          min-height: 0;
+        }
+        .pj-img {
+          /* Slower than the card: drifts the other way while the card travels. */
+          scale: 1.12;
+          animation: pj-parallax linear both;
+          animation-timeline: --pj;
+          animation-range: cover calc(var(--f) - var(--slot)) cover calc(var(--f) + var(--slot));
+        }
+        .pj-text {
+          justify-content: center;
+          gap: clamp(0.6rem, 1.8vh, 1.25rem);
+          padding: clamp(1.25rem, 3.4vh, 2.25rem) clamp(1.25rem, 2.6vw, 2.5rem);
+        }
+        .pj-h3 {
+          font-size: clamp(1.5rem, 3.6vh, 2.125rem);
+        }
+        .pj-num {
+          top: clamp(0.75rem, 2vh, 1.25rem);
+          font-size: clamp(3.5rem, 9vh, 6rem);
+          animation: pj-num-drift linear both;
+          animation-timeline: --pj;
+          animation-range: cover calc(var(--f) - var(--slot)) cover calc(var(--f) + var(--slot));
+        }
+        .pj-links {
+          margin-top: 0;
+        }
+
+        /* Card text lands one piece at a time, from the right. */
+        .pj-in {
+          animation: pj-text cubic-bezier(0.23, 1, 0.32, 1) both;
+          animation-timeline: --pj;
+          animation-range: cover calc(var(--f) - 0.85 * var(--slot) + var(--s) * 0.04 * var(--slot))
+            cover calc(var(--f) - 0.55 * var(--slot) + var(--s) * 0.04 * var(--slot));
+        }
+
+        /* Progress: counter and a rail that fills across the whole track. */
+        .pj-prog {
+          display: flex;
+          align-items: center;
+          gap: 1.25rem;
+          padding-bottom: 0.5rem;
+        }
+        .pj-count {
+          display: inline-flex;
+          align-items: baseline;
+          gap: 0.5rem;
+          font-variant-numeric: tabular-nums;
+        }
+        .pj-cur-stack {
+          display: grid;
+          font-size: 2.25rem;
+          font-weight: 800;
+          line-height: 1;
+          letter-spacing: -0.04em;
+          color: var(--primary);
+        }
+        .pj-cur {
+          grid-area: 1 / 1;
+          opacity: 0;
+          animation: pj-cur linear both;
+          animation-timeline: --pj;
+          animation-range: cover calc(var(--base) + (var(--i) - 0.5) * var(--slot)) cover
+            calc(var(--base) + (var(--i) + 0.5) * var(--slot));
+        }
+        .pj-cur[data-edge='first'] {
+          animation-name: pj-cur-first;
+          animation-range: cover var(--base) cover calc(var(--base) + 0.5 * var(--slot));
+        }
+        .pj-cur[data-edge='last'] {
+          animation-name: pj-cur-last;
+        }
+        .pj-of {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: var(--muted-foreground);
+        }
+        .pj-rail {
+          position: relative;
+          width: clamp(8rem, 16vw, 14rem);
+          height: 2px;
+          background: var(--border);
+        }
+        .pj-rail-fill {
+          position: absolute;
+          inset: 0;
+          background: var(--primary);
+          transform-origin: left;
+          animation: pj-fill linear both;
+          animation-timeline: --pj;
+          animation-range: cover var(--base) cover calc(var(--base) + (var(--n) - 1) * var(--slot));
         }
       }
     }
   }
 
-  @keyframes recede {
-    to {
-      transform: scale(calc(1 - (var(--n) - var(--i)) * 0.03));
+  @keyframes pj-slide {
+    from {
+      opacity: 0;
+      translate: min(30%, 6rem) 0;
+      scale: 0.97;
     }
   }
-  @keyframes shade {
+  @keyframes pj-travel {
     to {
-      opacity: 0.45;
+      translate: calc((var(--n) - 1) * var(--step) * -1) 0;
+    }
+  }
+  @keyframes pj-focus {
+    0%,
+    100% {
+      opacity: 0.4;
+      scale: 0.88;
+      filter: blur(3px);
+    }
+    38%,
+    62% {
+      opacity: 1;
+      scale: 1;
+      filter: blur(0);
+    }
+  }
+  @keyframes pj-parallax {
+    from {
+      translate: -4% 0;
+    }
+    to {
+      translate: 4% 0;
+    }
+  }
+  @keyframes pj-num-drift {
+    from {
+      translate: 3rem 0;
+    }
+    to {
+      translate: -3rem 0;
+    }
+  }
+  @keyframes pj-text {
+    from {
+      opacity: 0;
+      translate: 2.5rem 0;
+    }
+  }
+  @keyframes pj-cur {
+    0% {
+      opacity: 0;
+    }
+    1%,
+    99% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes pj-cur-first {
+    0%,
+    99% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes pj-cur-last {
+    0% {
+      opacity: 0;
+    }
+    1%,
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes pj-fill {
+    from {
+      scale: 0 1;
     }
   }
 </style>
+
+<script>
+  // Keyboard: tabbing into an off-screen card scrolls the page to the spot where that card is in focus.
+  const track = document.querySelector<HTMLElement>('#projects .pj-track');
+  const pin = track?.querySelector<HTMLElement>('.pj-pin');
+  const pinned = window.matchMedia(
+    '(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)',
+  );
+  if (track && pin && CSS.supports('animation-timeline: view()')) {
+    track.addEventListener('focusin', (e) => {
+      if (!pinned.matches) return;
+      const card = (e.target as HTMLElement).closest<HTMLElement>('.pj-card');
+      if (!card) return;
+      const i = Number(card.style.getPropertyValue('--i'));
+      const slotVh = Number.parseFloat(getComputedStyle(track).getPropertyValue('--slot-vh'));
+      const stick = Number.parseFloat(getComputedStyle(pin).top);
+      const trackTop = track.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({
+        top: trackTop - stick + (i * slotVh * window.innerHeight) / 100,
+        behavior: 'instant',
+      });
+    });
+  }
+</script>
