@@ -115,7 +115,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
                           className="size-4 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
                           aria-hidden="true"
                         />
-                        <span class="sr-only">(opens in a new tab)</span>
+                        <span class="sr-only">{` — ${p.title} (opens in a new tab)`}</span>
                       </a>
                     ))}
                   </div>
@@ -288,7 +288,8 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
       /* Small and short screens: each card slides in from the right as it enters. */
       .pj-card {
         animation: pj-slide cubic-bezier(0.23, 1, 0.32, 1) both;
-        animation-timeline: view(); /* literal view(): this card is its own subject */
+        /* var() keeps minifiers from folding this into the `animation` shorthand, which Chrome rejects. */
+        animation-timeline: var(--pj-view, view());
         animation-range: entry 0% entry 75%;
       }
     }
@@ -300,14 +301,16 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
       @media (min-width: 1024px) and (min-height: 700px) {
         .pj-track {
           --stick: 4.5rem;
+          /* Viewport-height unit: svh where supported (see the @supports below), so mobile toolbars do not resize the pin. */
+          --vh: 1vh;
           /* Scroll per card, in vh. Raise it for a slower, longer track. */
           --slot-vh: 75;
-          --slot: calc(var(--slot-vh) * 1vh);
+          --slot: calc(var(--slot-vh) * var(--vh));
           /* Extra scroll after the last card lands, so it rests in focus before the pin lets go. */
-          --tail: 14vh;
+          --tail: calc(14 * var(--vh));
           --hold: calc((var(--n) - 1) * var(--slot) + var(--tail));
           /* Scroll position (in cover terms) at which the pin engages. */
-          --base: calc(100vh - var(--stick));
+          --base: calc(100 * var(--vh) - var(--stick));
           --w: min(58rem, 100vw - 9rem);
           --gap: 2rem;
           --step: calc(var(--w) + var(--gap));
@@ -325,6 +328,12 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
           display: flex;
           flex-direction: column;
           height: calc(100vh - var(--stick) - 1.25rem);
+          height: calc(100svh - var(--stick) - 1.25rem);
+        }
+        @supports (height: 1svh) {
+          .pj-track {
+            --vh: 1svh;
+          }
         }
         .pj-head {
           display: flex;
@@ -349,7 +358,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
           width: max-content;
           height: 100%;
           animation: pj-travel linear both;
-          animation-timeline: --pj;
+          animation-timeline: var(--pj-tl, --pj);
           animation-range: cover var(--base) cover calc(var(--base) + (var(--n) - 1) * var(--slot));
         }
         .pj-card {
@@ -358,7 +367,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
           height: 100%;
           /* Sharp and full size in focus, smaller, dimmer and softer as it arrives or leaves. */
           animation: pj-focus linear both;
-          animation-timeline: --pj;
+          animation-timeline: var(--pj-tl, --pj);
           animation-range: cover calc(var(--f) - var(--slot)) cover calc(var(--f) + var(--slot));
         }
         .pj-body {
@@ -371,7 +380,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
           /* Slower than the card: drifts the other way while the card travels. */
           scale: 1.12;
           animation: pj-parallax linear both;
-          animation-timeline: --pj;
+          animation-timeline: var(--pj-tl, --pj);
           animation-range: cover calc(var(--f) - var(--slot)) cover calc(var(--f) + var(--slot));
         }
         .pj-text {
@@ -386,7 +395,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
           top: clamp(0.75rem, 2vh, 1.25rem);
           font-size: clamp(3.5rem, 9vh, 6rem);
           animation: pj-num-drift linear both;
-          animation-timeline: --pj;
+          animation-timeline: var(--pj-tl, --pj);
           animation-range: cover calc(var(--f) - var(--slot)) cover calc(var(--f) + var(--slot));
         }
         .pj-links {
@@ -396,7 +405,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
         /* Card text lands one piece at a time, from the right. */
         .pj-in {
           animation: pj-text cubic-bezier(0.23, 1, 0.32, 1) both;
-          animation-timeline: --pj;
+          animation-timeline: var(--pj-tl, --pj);
           animation-range: cover calc(var(--f) - 0.85 * var(--slot) + var(--s) * 0.04 * var(--slot))
             cover calc(var(--f) - 0.55 * var(--slot) + var(--s) * 0.04 * var(--slot));
         }
@@ -426,7 +435,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
           grid-area: 1 / 1;
           opacity: 0;
           animation: pj-cur linear both;
-          animation-timeline: --pj;
+          animation-timeline: var(--pj-tl, --pj);
           animation-range: cover calc(var(--base) + (var(--i) - 0.5) * var(--slot)) cover
             calc(var(--base) + (var(--i) + 0.5) * var(--slot));
         }
@@ -454,7 +463,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
           background: var(--primary);
           transform-origin: left;
           animation: pj-fill linear both;
-          animation-timeline: --pj;
+          animation-timeline: var(--pj-tl, --pj);
           animation-range: cover var(--base) cover calc(var(--base) + (var(--n) - 1) * var(--slot));
         }
       }
@@ -484,7 +493,7 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
     62% {
       opacity: 1;
       scale: 1;
-      filter: blur(0);
+      filter: none;
     }
   }
   @keyframes pj-parallax {
@@ -553,19 +562,29 @@ const edge = (i: number) => (i === 0 ? 'first' : i === total - 1 ? 'last' : 'mid
   const pinned = window.matchMedia(
     '(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)',
   );
+  // --slot is a calc() in svh/vh, so resolve it to pixels through a probe.
+  const measureSlot = (el: HTMLElement) => {
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:absolute;visibility:hidden;height:var(--slot)';
+    el.append(probe);
+    const px = probe.getBoundingClientRect().height;
+    probe.remove();
+    return px;
+  };
   if (track && pin && CSS.supports('animation-timeline: view()')) {
     track.addEventListener('focusin', (e) => {
       if (!pinned.matches) return;
-      const card = (e.target as HTMLElement).closest<HTMLElement>('.pj-card');
+      const target = e.target as HTMLElement;
+      if (!target.matches(':focus-visible')) return;
+      const card = target.closest<HTMLElement>('.pj-card');
       if (!card) return;
       const i = Number(card.style.getPropertyValue('--i'));
-      const slotVh = Number.parseFloat(getComputedStyle(track).getPropertyValue('--slot-vh'));
+      const slotPx = measureSlot(track);
       const stick = Number.parseFloat(getComputedStyle(pin).top);
       const trackTop = track.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: trackTop - stick + (i * slotVh * window.innerHeight) / 100,
-        behavior: 'instant',
-      });
+      const top = trackTop - stick + i * slotPx;
+      if (Math.abs(window.scrollY - top) < 0.3 * slotPx) return;
+      window.scrollTo({ top, behavior: 'instant' });
     });
   }
 </script>

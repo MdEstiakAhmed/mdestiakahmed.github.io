@@ -251,22 +251,22 @@ const rowB = flat.filter((_, i) => i % 2 === 1);
     @media (prefers-reduced-motion: no-preference) {
       .sk-card {
         animation: sk-rise cubic-bezier(0.23, 1, 0.32, 1) both;
-        animation-timeline: view();
+        animation-timeline: var(--sk-view, view());
         animation-range: entry 0% entry 85%;
       }
       .sk-count {
         animation: sk-count linear both;
-        animation-timeline: view();
+        animation-timeline: var(--sk-view, view());
         animation-range: entry 10% cover 45%;
       }
       .sk-chips .sk-chip {
         animation: sk-chip cubic-bezier(0.23, 1, 0.32, 1) both;
-        animation-timeline: view();
+        animation-timeline: var(--sk-view, view());
         animation-range: entry calc(20% + var(--c) * 5%) entry calc(95% + var(--c) * 5%);
       }
       .sk-marquee {
         animation: sk-fade linear both;
-        animation-timeline: view();
+        animation-timeline: var(--sk-view, view());
         animation-range: entry 0% entry 100%;
       }
     }
