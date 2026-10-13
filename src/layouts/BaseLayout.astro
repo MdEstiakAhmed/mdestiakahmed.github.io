@@ -1,6 +1,7 @@
 ---
 import '@/styles/global.css';
 
+import Starfield from '@/components/Starfield.astro';
 import { profile, seo, socials } from '@/data/site-data';
 
 interface Props {
@@ -72,6 +73,7 @@ const person = {
     </script>
   </head>
   <body class="min-h-dvh">
+    <Starfield />
     <slot />
     <script>
       import '@/scripts/interactions';

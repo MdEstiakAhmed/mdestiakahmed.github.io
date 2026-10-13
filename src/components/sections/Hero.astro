@@ -11,6 +11,33 @@ const words = profile.name.split(' ');
 let letterIndex = 0;
 ---
 
+<!-- Runs before the hero paints: hide the intro's start state only when motion and WebGL are likely. -->
+<script is:inline>
+  (function () {
+    const d = document.documentElement;
+    const n = navigator;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if ((n.hardwareConcurrency || 8) <= 2 || (n.deviceMemory || 8) <= 2) return;
+    try {
+      const c = document.createElement('canvas');
+      const gl = c.getContext('webgl2') || c.getContext('webgl');
+      if (!gl) return;
+      const lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+    } catch {
+      return;
+    }
+    // hero-3d pins the track at its final height now, so hydration causes no layout jump.
+    d.classList.add('hero-intro', 'hero-3d');
+    // Safety net: never leave content hidden or inert if the intro script fails.
+    setTimeout(function () {
+      d.classList.add('hero-intro-done');
+      const content = document.querySelector('.hero-content');
+      if (content) content.removeAttribute('inert');
+    }, 4500);
+  })();
+</script>
+
 <div id="hero-track" class="hero-track relative">
   <section
     id="home"
@@ -19,7 +46,14 @@ let letterIndex = 0;
   >
     <!-- Static poster: always rendered, sits under the WebGL scene and is all you see without it. -->
     <div aria-hidden="true" class="hero-poster absolute inset-0 -z-10"></div>
-    <div class="absolute inset-0 -z-10 opacity-60 md:left-[42%] md:opacity-100">
+    <div aria-hidden="true" class="hero-spot pointer-events-none absolute inset-0 -z-10"></div>
+    <div
+      data-hero-layer="canvas"
+      class="hero-canvas-layer absolute inset-0 -z-10 opacity-60 md:left-[42%] md:opacity-100"
+    >
+      <!-- Ignition: one point of light and its glow, where the cloud sits. -->
+      <span aria-hidden="true" class="hero-bloom"></span>
+      <span aria-hidden="true" class="hero-spark"></span>
       <HeroCanvas client:only="react" trackId="hero-track" />
     </div>
 
@@ -64,7 +98,7 @@ let letterIndex = 0;
           <a
             href="#projects"
             data-magnetic
-            class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-[opacity,translate] hover:opacity-90"
+            class="hero-cta inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-[opacity,translate] hover:opacity-90"
           >
             View projects <ArrowDown className="size-4" aria-hidden="true" />
           </a>
@@ -105,6 +139,28 @@ let letterIndex = 0;
 </div>
 
 <style>
+  .hero-pin {
+    --hero-cyan: #0891b2;
+    --hero-spot: 5%;
+  }
+  :global(html.dark) .hero-pin {
+    --hero-cyan: #22d3ee;
+    --hero-spot: 15%;
+  }
+
+  /* Feather the canvas edges so the cloud never shows a hard cut. */
+  .hero-canvas-layer {
+    mask-image: linear-gradient(to bottom, transparent, #000 5rem);
+  }
+  @media (min-width: 768px) {
+    .hero-canvas-layer {
+      mask-image:
+        linear-gradient(to right, transparent, #000 10rem),
+        linear-gradient(to bottom, transparent, #000 5rem);
+      mask-composite: intersect;
+    }
+  }
+
   .hero-poster {
     background:
       radial-gradient(
@@ -121,7 +177,7 @@ let letterIndex = 0;
 
   /* With the 3D scene on, the hero pins while the particles morph through the shapes. */
   :global(html.hero-3d) .hero-track {
-    height: 320vh;
+    height: 520vh;
   }
   :global(html.hero-3d) .hero-pin {
     position: sticky;
@@ -130,6 +186,123 @@ let letterIndex = 0;
   }
   :global(html.hero-3d) .hero-content {
     opacity: calc(1 - max(0, var(--hero-progress, 0) - 0.85) * 6.6);
+  }
+
+  /* Cursor spotlight: behind the text, faded out with the hero's exit. */
+  .hero-spot {
+    background: radial-gradient(
+      22rem circle at var(--sx, 50%) var(--sy, 50%),
+      color-mix(in oklch, var(--hero-cyan) var(--hero-spot), transparent),
+      transparent 70%
+    );
+    opacity: calc(var(--spot-on, 0) * (1 - max(0, var(--hero-progress, 0) - 0.85) * 6.6));
+  }
+
+  /* Ignition point and bloom sit at the cloud's centre (centred by GSAP xPercent/yPercent, which
+     would otherwise absorb a CSS translate). Invisible unless the intro drives them. */
+  .hero-spark,
+  .hero-bloom {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 9999px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .hero-spark {
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--hero-cyan);
+    box-shadow:
+      0 0 1.25rem 0.4rem color-mix(in oklch, var(--hero-cyan) 70%, transparent),
+      0 0 4rem 1rem color-mix(in oklch, var(--hero-cyan) 35%, transparent);
+  }
+  .hero-bloom {
+    width: min(40rem, 90vw);
+    aspect-ratio: 1;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in oklch, var(--hero-cyan) 30%, transparent),
+      transparent
+    );
+  }
+
+  /* Intro start state: only exists while html.hero-intro is set (motion allowed, JS running). */
+  :global(html.hero-intro) .hero-letter,
+  :global(html.hero-intro) .hero-fade {
+    animation: none;
+  }
+  :global(html.hero-intro:not(.hero-intro-done)) .hero-letter,
+  :global(html.hero-intro:not(.hero-intro-done)) .hero-fade,
+  :global(html.hero-intro:not(.hero-intro-done)) .hero-poster {
+    opacity: 0;
+  }
+
+  /* Primary CTA: rotating conic ring (drawn as a masked border) and a hover light sweep. */
+  @property --hero-angle {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+  }
+  .hero-cta {
+    position: relative;
+  }
+  .hero-cta::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    padding: 2px;
+    border-radius: inherit;
+    background: conic-gradient(
+      from var(--hero-angle),
+      transparent 0 55%,
+      var(--hero-cyan) 80%,
+      #5b8fd8 92%,
+      transparent
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: hero-ring 4s linear infinite;
+  }
+  .hero-cta::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+        105deg,
+        transparent 35%,
+        rgb(255 255 255 / 0.35) 50%,
+        transparent 65%
+      )
+      200% 0 / 250% 100% no-repeat;
+    pointer-events: none;
+    transition: background-position 700ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .hero-cta:hover::after,
+  .hero-cta:focus-visible::after {
+    background-position: -100% 0;
+  }
+  @keyframes hero-ring {
+    to {
+      --hero-angle: 360deg;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-cta::before {
+      animation: none;
+    }
+    .hero-cta::after {
+      display: none;
+    }
+    .hero-letter,
+    .hero-fade,
+    .hero-scroll-dot {
+      animation: none;
+    }
   }
 
   .hero-letter {
@@ -172,6 +345,9 @@ let letterIndex = 0;
 </style>
 
 <script>
+  import '@/scripts/hero-intro';
+  import '@/scripts/hero-depth';
+
   // Magnetic CTAs: buttons drift toward the cursor. Fine pointers only, off for reduced motion.
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

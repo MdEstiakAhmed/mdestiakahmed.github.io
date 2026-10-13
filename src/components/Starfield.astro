@@ -1,0 +1,325 @@
+---
+/**
+ * Page-wide star and galaxy backdrop: one fixed 2D canvas behind everything.
+ * Stars sit on three parallax layers that follow scroll; two faint spiral galaxies
+ * rotate with scroll progress plus a very slow idle drift. Purely decorative:
+ * aria-hidden, pointer-events none, z-index -1 (above the body colour, below content).
+ */
+---
+
+<canvas
+  id="starfield"
+  aria-hidden="true"
+  tabindex="-1"
+  class="pointer-events-none fixed inset-0 -z-10 h-lvh w-full opacity-0 transition-opacity duration-1000 select-none"
+></canvas>
+
+<script>
+  // Tuning knobs.
+  const OPACITY = { dark: 0.9, light: 0.85 }; // overall canvas opacity per theme
+  const STAR_DENSITY = 1 / 5500; // stars per CSS px of viewport area (per page-height of 3)
+  const MAX_STARS = 420;
+  const MOBILE_FACTOR = 0.45; // star count multiplier under 640px wide
+  const MAX_DPR = 1.5;
+  // Parallax: fraction of scroll distance each star layer travels (far -> near).
+  const LAYERS = [
+    { speed: 0.04, size: 0.9, alpha: 0.5, share: 0.55 },
+    { speed: 0.1, size: 1.3, alpha: 0.7, share: 0.3 },
+    { speed: 0.2, size: 1.9, alpha: 0.9, share: 0.15 },
+  ];
+  const IDLE_DRIFT = 2.5; // px per second of slow upward idle drift (before layer speed)
+  const GALAXY_SCROLL_SPIN = 0.00045; // radians per scrolled px
+  const GALAXY_IDLE_SPIN = 0.012; // radians per second
+  const GALAXY_GLOW = 0.1; // peak alpha of the core glow
+  const GALAXY_DOTS = 320;
+  // Shooting stars: rare diagonal streaks, triggered by scrolling plus an occasional idle one.
+  const SHOOTING_MAX = 3; // alive at once
+  const SHOOTING_COOLDOWN_MS = 1400; // minimum gap between spawns
+  const SHOOTING_SPEED = 1100; // px per second along the path
+  const SHOOTING_TAIL = 150; // tail length in px
+  const SHOOTING_ALPHA = 0.7; // peak head alpha (before the canvas opacity)
+  const SHOOTING_IDLE_MS = [8000, 14000] as const; // random wait for an idle streak
+  const SHOOTING_SCROLL_MIN = 600; // px/s of scroll speed before streaks can spawn
+
+  const PALETTE = {
+    dark: {
+      star: [214, 226, 255],
+      glow: [112, 128, 255],
+      arm: [170, 190, 255],
+      tail: [120, 130, 255],
+    },
+    // Muted indigo, matching the brand primary (#507fc0 family).
+    light: { star: [58, 78, 160], glow: [90, 110, 200], arm: [80, 100, 180], tail: [90, 100, 190] },
+  } as const;
+
+  type Star = { x: number; y: number; layer: (typeof LAYERS)[number]; r: number; phase: number };
+  type Dot = { r: number; a: number; s: number; o: number };
+
+  const canvas = document.getElementById('starfield') as HTMLCanvasElement | null;
+  const ctx = canvas?.getContext('2d') ?? null;
+  const root = document.documentElement;
+  const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function boot(): void {
+    if (!canvas || !ctx) return;
+    const c = canvas;
+    const g = ctx;
+
+    let w = 0;
+    let h = 0;
+    let stars: Star[] = [];
+    let dots: Dot[] = [];
+    let scroll = window.scrollY;
+    let scrollSpeed = 0; // px/s, smoothed
+    let lastScrollY = scroll;
+    let lastScrollT = performance.now();
+    let lastFrame = 0;
+    let lastSpawn = 0;
+    let nextIdle = 0;
+    // Pooled streaks: no allocation while running.
+    const streaks = Array.from({ length: SHOOTING_MAX }, () => ({
+      live: false,
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      age: 0,
+      life: 1,
+    }));
+    let raf = 0;
+    let t0 = performance.now();
+    let dark = root.classList.contains('dark');
+
+    const rand = (() => {
+      // Seeded so the sky is stable between resizes.
+      let s = 7;
+      return () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+    })();
+
+    function build(): void {
+      w = window.innerWidth;
+      h = c.clientHeight || window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+      c.width = Math.round(w * dpr);
+      c.height = Math.round(h * dpr);
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const total = Math.min(
+        MAX_STARS,
+        Math.round(w * h * STAR_DENSITY * 3 * (w < 640 ? MOBILE_FACTOR : 1)),
+      );
+      stars = [];
+      LAYERS.forEach((layer) => {
+        const n = Math.round(total * layer.share);
+        for (let k = 0; k < n; k++) {
+          stars.push({
+            x: rand() * w,
+            y: rand() * h,
+            layer,
+            r: layer.size * (0.6 + rand() * 0.8),
+            phase: rand() * Math.PI * 2,
+          });
+        }
+      });
+
+      dots = [];
+      for (let k = 0; k < GALAXY_DOTS; k++) {
+        const arm = k % 2;
+        const r = Math.pow(rand(), 0.7);
+        // Logarithmic-ish spiral with jitter.
+        const a = arm * Math.PI + r * 5.2 + (rand() - 0.5) * 0.55;
+        dots.push({ r, a, s: 0.5 + rand() * 1.1, o: 0.25 + rand() * 0.75 });
+      }
+    }
+
+    function galaxy(cx: number, cy: number, size: number, rot: number, k: number): void {
+      const p = PALETTE[dark ? 'dark' : 'light'];
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(-0.45);
+      g.scale(1, 0.48);
+      const grad = g.createRadialGradient(0, 0, 0, 0, 0, size);
+      const [gr, gg, gb] = p.glow;
+      grad.addColorStop(0, `rgba(${gr},${gg},${gb},${GALAXY_GLOW * k})`);
+      grad.addColorStop(0.35, `rgba(${gr},${gg},${gb},${GALAXY_GLOW * 0.4 * k})`);
+      grad.addColorStop(1, `rgba(${gr},${gg},${gb},0)`);
+      g.fillStyle = grad;
+      g.fillRect(-size, -size, size * 2, size * 2);
+      const [ar, ag, ab] = p.arm;
+      for (const d of dots) {
+        const ang = d.a + rot * (1.2 - d.r * 0.6); // inner disk turns faster
+        const x = Math.cos(ang) * d.r * size * 0.9;
+        const y = Math.sin(ang) * d.r * size * 0.9;
+        g.fillStyle = `rgba(${ar},${ag},${ab},${(0.55 * d.o * (1 - d.r * 0.5) * k).toFixed(3)})`;
+        g.fillRect(x, y, d.s * 1.4, d.s * 1.4);
+      }
+      g.restore();
+    }
+
+    function spawnStreak(now: number): void {
+      const st = streaks.find((q) => !q.live);
+      if (!st) return;
+      const ang = ((22 + rand() * 24) * Math.PI) / 180; // 22-46 deg below horizontal
+      st.live = true;
+      st.vx = -Math.cos(ang) * SHOOTING_SPEED * (0.85 + rand() * 0.3);
+      st.vy = Math.sin(ang) * SHOOTING_SPEED * (0.85 + rand() * 0.3);
+      st.x = w * (0.35 + rand() * 0.7);
+      st.y = -20 + rand() * h * 0.4;
+      st.age = 0;
+      st.life = 0.6 + rand() * 0.6;
+      lastSpawn = now;
+    }
+
+    function shooting(now: number, dt: number): void {
+      const [hr, hg, hb] = PALETTE[dark ? 'dark' : 'light'].star;
+      const [tr, tg, tb] = PALETTE[dark ? 'dark' : 'light'].tail;
+      const k = dark ? 1 : 0.6;
+      if (!nextIdle) nextIdle = now + SHOOTING_IDLE_MS[0];
+      const ready = now - lastSpawn > SHOOTING_COOLDOWN_MS;
+      if (ready) {
+        const fast = Math.max(0, scrollSpeed - SHOOTING_SCROLL_MIN);
+        // Chance per second grows with scroll speed (about 1.2/s at 3000 px/s).
+        if (rand() < Math.min(1.5, fast / 2000) * dt) spawnStreak(now);
+        else if (now > nextIdle) spawnStreak(now);
+      }
+      if (now > nextIdle && now - lastSpawn < 50) {
+        nextIdle = now + SHOOTING_IDLE_MS[0] + rand() * (SHOOTING_IDLE_MS[1] - SHOOTING_IDLE_MS[0]);
+      }
+      for (const st of streaks) {
+        if (!st.live) continue;
+        st.age += dt;
+        if (st.age >= st.life) {
+          st.live = false;
+          continue;
+        }
+        st.x += st.vx * dt;
+        st.y += st.vy * dt;
+        const f = st.age / st.life;
+        const fade = Math.sin(Math.PI * f); // ease in and out
+        const len = Math.hypot(st.vx, st.vy);
+        const tx = st.x - (st.vx / len) * SHOOTING_TAIL;
+        const ty = st.y - (st.vy / len) * SHOOTING_TAIL;
+        const grad = g.createLinearGradient(st.x, st.y, tx, ty);
+        const a = SHOOTING_ALPHA * fade * k;
+        grad.addColorStop(0, `rgba(${hr},${hg},${hb},${a.toFixed(3)})`);
+        grad.addColorStop(0.25, `rgba(${tr},${tg},${tb},${(a * 0.45).toFixed(3)})`);
+        grad.addColorStop(1, `rgba(${tr},${tg},${tb},0)`);
+        g.strokeStyle = grad;
+        g.lineWidth = 1.4;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(st.x, st.y);
+        g.lineTo(tx, ty);
+        g.stroke();
+        g.fillStyle = `rgba(${hr},${hg},${hb},${a.toFixed(3)})`;
+        g.beginPath();
+        g.arc(st.x, st.y, 1.4, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+
+    function draw(now: number): void {
+      const reduced = reducedQuery.matches;
+      const secs = reduced ? 0 : (now - t0) / 1000;
+      const sy = reduced ? 0 : scroll;
+      const p = PALETTE[dark ? 'dark' : 'light'];
+      const [sr, sg, sb] = p.star;
+      g.clearRect(0, 0, w, h);
+
+      // Galaxies first (behind the stars). Each drifts up slower than the page.
+      const spin = sy * GALAXY_SCROLL_SPIN + secs * GALAXY_IDLE_SPIN;
+      const big = Math.min(w, 900) * 0.55;
+      galaxy(w * 0.78, h * 0.3 - sy * 0.07 - secs * 0.4, big, spin, 1);
+      galaxy(w * 0.14, h * 1.15 - sy * 0.09 - secs * 0.4, big * 0.8, -spin * 0.8, 0.85);
+
+      for (const s of stars) {
+        const layer = s.layer;
+        const travel = sy * layer.speed + secs * IDLE_DRIFT * layer.speed * 4;
+        const y = (((s.y - travel) % h) + h) % h;
+        const tw = reduced ? 1 : 0.75 + 0.25 * Math.sin(secs * 0.9 + s.phase);
+        g.fillStyle = `rgba(${sr},${sg},${sb},${(layer.alpha * tw).toFixed(3)})`;
+        if (s.r > 1.5) {
+          g.beginPath();
+          g.arc(s.x, y, s.r * 0.7, 0, Math.PI * 2);
+          g.fill();
+        } else {
+          g.fillRect(s.x, y, s.r, s.r);
+        }
+      }
+    }
+
+    function frame(now: number): void {
+      const dt = Math.min(0.05, lastFrame ? (now - lastFrame) / 1000 : 0.016);
+      lastFrame = now;
+      // Decay measured scroll speed when no scroll events arrive.
+      if (now - lastScrollT > 80) scrollSpeed *= 0.9;
+      draw(now);
+      shooting(now, dt);
+      raf = requestAnimationFrame(frame);
+    }
+    function start(): void {
+      if (raf || reducedQuery.matches || document.hidden) return;
+      raf = requestAnimationFrame(frame);
+    }
+    function stop(): void {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      lastFrame = 0;
+      for (const st of streaks) st.live = false;
+    }
+    function applyTheme(): void {
+      dark = root.classList.contains('dark');
+      c.style.opacity = String(dark ? OPACITY.dark : OPACITY.light);
+      if (!raf) draw(performance.now());
+    }
+
+    build();
+    applyTheme();
+    window.addEventListener(
+      'scroll',
+      () => {
+        const now = performance.now();
+        scroll = window.scrollY;
+        const dtMs = Math.max(1, now - lastScrollT);
+        const inst = (Math.abs(scroll - lastScrollY) / dtMs) * 1000;
+        scrollSpeed = scrollSpeed * 0.6 + inst * 0.4;
+        lastScrollY = scroll;
+        lastScrollT = now;
+      },
+      { passive: true },
+    );
+    let lastW = window.innerWidth;
+    let resizeTimer = 0;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        // Ignore mobile URL-bar height jitter; the canvas is sized to the large viewport.
+        if (window.innerWidth === lastW) return;
+        lastW = window.innerWidth;
+        build();
+        if (!raf) draw(performance.now());
+      }, 150);
+    });
+    document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+    reducedQuery.addEventListener('change', () => {
+      stop();
+      start();
+      if (!raf) draw(performance.now());
+    });
+    new MutationObserver(applyTheme).observe(root, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    t0 = performance.now();
+    start();
+  }
+
+  const lazyStart = () => {
+    const run = () => boot();
+    if ('requestIdleCallback' in window) window.requestIdleCallback(run, { timeout: 1500 });
+    else setTimeout(run, 300);
+  };
+  if (document.readyState === 'complete') lazyStart();
+  else window.addEventListener('load', lazyStart, { once: true });
+</script>

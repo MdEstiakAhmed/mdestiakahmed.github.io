@@ -180,7 +180,7 @@ const statFrom: From[] = ['left', 'bottom', 'bottom'];
         .assemble-track {
           /* Roughly centre the heading + grid (~42rem tall) under the site header. */
           --stick: max(5rem, calc(50vh - 21rem));
-          --hold: 130vh;
+          --hold: 200vh;
           view-timeline: --about block;
         }
         /* Scroll room for the pinned grid. A child, not padding: sticky stops at the content box. */
@@ -197,10 +197,10 @@ const statFrom: From[] = ['left', 'bottom', 'bottom'];
           margin-bottom: 2rem;
         }
         .assemble {
-          /* Start slightly before the grid pins, then one tile every 13vh of scroll. */
-          --start: calc(80vh - var(--stick) + var(--i) * 13vh);
+          /* Start slightly before the grid pins, then one tile every 22vh of scroll. */
+          --start: calc(80vh - var(--stick) + var(--i) * 22vh);
           animation-timeline: var(--tl, --about);
-          animation-range: cover var(--start) cover calc(var(--start) + 24vh);
+          animation-range: cover var(--start) cover calc(var(--start) + 36vh);
         }
       }
     }

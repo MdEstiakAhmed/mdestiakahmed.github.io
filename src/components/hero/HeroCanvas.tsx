@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
+import { setHeroStatus } from '@/components/hero/hero-state';
 import { shapes } from '@/components/hero/shapes';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/lib/use-theme';
@@ -21,7 +22,9 @@ function detectCapability(): Capability {
 
   try {
     const probe = document.createElement('canvas');
-    if (!probe.getContext('webgl2') && !probe.getContext('webgl')) return off;
+    const context = probe.getContext('webgl2') ?? probe.getContext('webgl');
+    if (!context) return off;
+    context.getExtension('WEBGL_lose_context')?.loseContext();
   } catch {
     return off;
   }
@@ -44,10 +47,15 @@ export default function HeroCanvas({ trackId }: Props) {
   const progress = useRef(0);
   const root = useRef<HTMLDivElement>(null);
 
-  // Opt the page into the pinned scroll track only when the scene actually runs.
+  // The inline probe in Hero.astro sets `hero-3d` before paint; this keeps it in step with the
+  // scene and tells the intro whether there is one to wait for.
   useEffect(() => {
-    if (!capability.enabled) return;
     const html = document.documentElement;
+    if (!capability.enabled) {
+      html.classList.remove('hero-3d');
+      setHeroStatus('skip');
+      return;
+    }
     html.classList.add('hero-3d');
     return () => html.classList.remove('hero-3d');
   }, [capability.enabled]);
@@ -65,17 +73,26 @@ export default function HeroCanvas({ trackId }: Props) {
       track.style.setProperty('--hero-progress', progress.current.toFixed(3));
       setActive(Math.round(progress.current * (shapes.length - 1)));
     };
+    let frame = 0;
+    const schedule = (): void => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        update();
+      });
+    };
     update();
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
 
     // Stop rendering once the hero is off screen.
     const io = new IntersectionObserver(([entry]) => setVisible(entry?.isIntersecting ?? false));
     io.observe(track);
 
     return () => {
-      window.removeEventListener('scroll', update);
-      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      cancelAnimationFrame(frame);
       io.disconnect();
     };
   }, [capability.enabled, trackId]);
@@ -92,6 +109,7 @@ export default function HeroCanvas({ trackId }: Props) {
       <ol
         aria-hidden="true"
         className="bg-background/60 absolute right-6 bottom-8 z-10 hidden flex-col gap-3 rounded-2xl border p-4 text-sm backdrop-blur-md md:flex"
+        style={{ opacity: 'calc(1 - max(0, var(--hero-progress, 0) - 0.85) * 6.6)' }}
       >
         <span className="bg-border absolute top-7 bottom-7 left-[calc(1.75rem-0.5px)] w-px" />
         <span
