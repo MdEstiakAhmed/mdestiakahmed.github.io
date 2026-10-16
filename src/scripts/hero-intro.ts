@@ -1,6 +1,6 @@
 /**
- * Hero ignition: a point of light appears, the cloud converges, then the name, tagline,
- * buttons and socials resolve. One GSAP timeline, under 2.5s. It only runs when the inline
+ * Hero intro: the 3D monogram turns in while the name rises letter by letter, then the
+ * copy, buttons and role list resolve. One GSAP timeline, under 2s. It only runs when the inline
  * script in Hero.astro added `html.hero-intro` (motion allowed); otherwise content is just there.
  */
 import { heroState } from '@/components/hero/hero-state';
@@ -9,8 +9,8 @@ import { heroState } from '@/components/hero/hero-state';
 const WAIT_FOR_SCENE_MS = 3500; // give up and simply reveal if the scene never reports in
 const GSAP_TIMEOUT_MS = 1500; // once the scene is ready, how long to wait for the gsap chunk
 const MOBILE_SPEED = 1.3; // timeline speed-up on narrow screens
-// Everything the timeline sets inline. `translate` is deliberately absent: hero-depth owns it.
-const ANIMATED_PROPS = 'opacity,transform,filter,color,textShadow,visibility';
+// Everything the timeline sets inline. `translate` is deliberately absent: the hero CSS owns it.
+const ANIMATED_PROPS = 'opacity,transform,filter,visibility';
 
 const root = document.documentElement;
 
@@ -69,59 +69,28 @@ async function run(): Promise<void> {
 
   const pin = document.getElementById('home');
   if (!pin) return finish();
-  const spark = pin.querySelector('.hero-spark');
-  const bloom = pin.querySelector('.hero-bloom');
-  const poster = pin.querySelector('.hero-poster');
   const letters = gsap.utils.toArray<HTMLElement>('.hero-letter', pin);
   const fades = gsap.utils.toArray<HTMLElement>('.hero-fade', pin);
-
-  // Read when the sweep starts, so a theme switch during the intro is honoured.
-  const cyan = (): string =>
-    getComputedStyle(pin).getPropertyValue('--hero-cyan').trim() || '#22d3ee';
   const mid = (letters.length - 1) / 2;
-
-  // The glow elements are centred here, not in CSS: GSAP folds a CSS `translate` into its transform.
-  gsap.set([spark, bloom], { xPercent: -50, yPercent: -50 });
 
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: finish });
   stopTimeline = () => {
     tl.kill();
-    gsap.set([...letters, ...fades, poster, spark, bloom], { clearProps: ANIMATED_PROPS });
+    gsap.set([...letters, ...fades], { clearProps: ANIMATED_PROPS });
   };
 
-  // 1. A single point of light, then the glow blooms around it.
-  tl.fromTo(spark, { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.35 }, 0)
-    .fromTo(bloom, { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 1.1 }, 0.1)
-    .fromTo(poster, { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power1.out' }, 0.1)
-    // 2. Particles converge: `intro` scales their ease speed and opacity (ParticleField).
-    .to(heroState, { intro: 1, duration: 1.4, ease: 'power2.inOut' }, 0.35)
-    .to(spark, { opacity: 0, scale: 2.4, duration: 0.5 }, 0.9)
-    .to(bloom, { opacity: 0, duration: 0.9, ease: 'power1.out' }, 1.3)
-    // 3. The name resolves: blur and spread settle, then one cyan light sweep through it.
+  tl
+    // 1. The monogram turns in and settles (the scene reads `intro`).
+    .to(heroState, { intro: 1, duration: 1.5, ease: 'power3.out' }, 0)
+    // 2. The name rises letter by letter out of its mask, fanning in from the centre.
     .fromTo(
       letters,
-      {
-        opacity: 0,
-        yPercent: 60,
-        filter: 'blur(12px)',
-        x: (i: number) => (i - mid) * 7,
-      },
-      { opacity: 1, yPercent: 0, filter: 'blur(0px)', x: 0, duration: 0.75, stagger: 0.03 },
-      0.9,
+      { opacity: 0, yPercent: 105, filter: 'blur(10px)', x: (i: number) => (i - mid) * 6 },
+      { opacity: 1, yPercent: 0, filter: 'blur(0px)', x: 0, duration: 0.9, stagger: 0.04 },
+      0.15,
     )
-    .to(
-      letters,
-      {
-        color: () => cyan(),
-        textShadow: () => `0 0 18px ${cyan()}99`,
-        duration: 0.16,
-        stagger: { each: 0.035, yoyo: true, repeat: 1 },
-        ease: 'power1.inOut',
-      },
-      1.5,
-    )
-    // 4. Everything else, top to bottom.
-    .fromTo(fades, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 }, 1.35);
+    // 3. Everything else, top to bottom.
+    .fromTo(fades, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, stagger: 0.08 }, 0.9);
 
   if (window.matchMedia('(max-width: 767px)').matches) tl.timeScale(MOBILE_SPEED);
 }

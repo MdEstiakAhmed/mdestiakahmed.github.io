@@ -83,7 +83,12 @@ export const profile = {
   name: 'Md. Estiak Ahmed',
   shortName: 'Estiak',
   title: 'Frontend-focused Full-Stack Engineer',
-  typingRoles: ['Frontend Wizard', 'Code Craftsman'],
+  roles: [
+    'Frontend Engineering',
+    'Full-Stack Development',
+    'Micro-frontends',
+    'Component Libraries',
+  ],
   tagline: 'React, Next.js, TypeScript and NestJS. Based in Dhaka, Bangladesh.',
   location: 'Dhaka, Bangladesh',
   email: 'estiak97@gmail.com',
@@ -140,7 +145,7 @@ export const socials: Social[] = [
 export const nav = [
   { label: 'About', href: '#about' },
   { label: 'Experience', href: '#experience' },
-  { label: 'Projects', href: '#projects' },
+  // { label: 'Projects', href: '#projects' },
   { label: 'Skills', href: '#skills' },
   { label: 'Services', href: '#services' },
   { label: 'Contact', href: '#contact' },

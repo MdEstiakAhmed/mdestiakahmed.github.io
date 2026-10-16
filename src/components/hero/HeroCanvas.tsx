@@ -1,36 +1,26 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import { setHeroStatus } from '@/components/hero/hero-state';
-import { shapes } from '@/components/hero/shapes';
-import { cn } from '@/lib/utils';
 import { useTheme } from '@/lib/use-theme';
 
-const ParticleField = lazy(() => import('@/components/hero/ParticleField'));
+const CodeMonogram = lazy(() => import('@/components/hero/CodeMonogram'));
 
-interface Capability {
-  enabled: boolean;
-  count: number;
-}
-
-/** Gate the 3D scene: reduced motion, no WebGL or a weak device keep the static poster. */
-function detectCapability(): Capability {
-  const off = { enabled: false, count: 0 };
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return off;
+/** Gate the 3D scene: reduced motion, no WebGL or a weak device keep the static fallback. */
+function detectCapability(): boolean {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
 
   const nav = navigator as Navigator & { deviceMemory?: number };
-  if ((nav.hardwareConcurrency ?? 8) <= 2 || (nav.deviceMemory ?? 8) <= 2) return off;
+  if ((nav.hardwareConcurrency ?? 8) <= 2 || (nav.deviceMemory ?? 8) <= 2) return false;
 
   try {
     const probe = document.createElement('canvas');
     const context = probe.getContext('webgl2') ?? probe.getContext('webgl');
-    if (!context) return off;
+    if (!context) return false;
     context.getExtension('WEBGL_lose_context')?.loseContext();
   } catch {
-    return off;
+    return false;
   }
-
-  const mobile = window.matchMedia('(max-width: 767px)').matches;
-  return { enabled: true, count: mobile ? 2200 : 5200 };
+  return true;
 }
 
 interface Props {
@@ -40,112 +30,48 @@ interface Props {
 
 export default function HeroCanvas({ trackId }: Props) {
   const theme = useTheme();
-  const [capability] = useState(detectCapability);
+  const [enabled] = useState(detectCapability);
   const [visible, setVisible] = useState(true);
   const [ready, setReady] = useState(false);
-  const [active, setActive] = useState(0);
-  const progress = useRef(0);
-  const root = useRef<HTMLDivElement>(null);
 
-  // The inline probe in Hero.astro sets `hero-3d` before paint; this keeps it in step with the
-  // scene and tells the intro whether there is one to wait for.
+  // The inline probe in Hero.astro sets `hero-3d` before paint (keep the two checks in step);
+  // this settles it for real and tells the intro whether there is a scene to wait for.
   useEffect(() => {
     const html = document.documentElement;
-    if (!capability.enabled) {
+    if (!enabled) {
       html.classList.remove('hero-3d');
       setHeroStatus('skip');
       return;
     }
     html.classList.add('hero-3d');
     return () => html.classList.remove('hero-3d');
-  }, [capability.enabled]);
+  }, [enabled]);
 
+  // Stop rendering once the hero is off screen.
   useEffect(() => {
-    if (!capability.enabled) return;
+    if (!enabled) return;
     const track = document.getElementById(trackId);
     if (!track) return;
-
-    const update = (): void => {
-      const rect = track.getBoundingClientRect();
-      const distance = rect.height - window.innerHeight;
-      const value = distance > 0 ? -rect.top / distance : 0;
-      progress.current = Math.min(Math.max(value, 0), 1);
-      track.style.setProperty('--hero-progress', progress.current.toFixed(3));
-      setActive(Math.round(progress.current * (shapes.length - 1)));
-    };
-    let frame = 0;
-    const schedule = (): void => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        update();
-      });
-    };
-    update();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-
-    // Stop rendering once the hero is off screen.
     const io = new IntersectionObserver(([entry]) => setVisible(entry?.isIntersecting ?? false));
     io.observe(track);
+    return () => io.disconnect();
+  }, [enabled, trackId]);
 
-    return () => {
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
-      cancelAnimationFrame(frame);
-      io.disconnect();
-    };
-  }, [capability.enabled, trackId]);
-
-  if (!capability.enabled || !theme) return null;
+  if (!enabled || !theme) return null;
 
   return (
     <div
-      ref={root}
       className="absolute inset-0 transition-opacity duration-1000"
       style={{ opacity: ready ? 1 : 0 }}
     >
-      {/* Step index for the morph: numbered stepper with a filling rail. */}
-      <ol
-        aria-hidden="true"
-        className="bg-background/60 absolute right-6 bottom-8 z-10 hidden flex-col gap-3 rounded-2xl border p-4 text-sm backdrop-blur-md md:flex"
-        style={{ opacity: 'calc(1 - max(0, var(--hero-progress, 0) - 0.85) * 6.6)' }}
-      >
-        <span className="bg-border absolute top-7 bottom-7 left-[calc(1.75rem-0.5px)] w-px" />
-        <span
-          className="bg-primary absolute top-7 left-[calc(1.75rem-0.5px)] w-px transition-[height] duration-500"
-          style={{ height: `calc((100% - 3.5rem) * ${active / (shapes.length - 1)})` }}
-        />
-        {shapes.map((s, i) => (
-          <li key={s.id} className="relative flex items-center gap-3">
-            <span
-              className={cn(
-                'grid size-6 place-items-center rounded-full border font-mono text-[11px] tabular-nums transition-colors duration-500',
-                i === active && 'border-primary bg-primary text-primary-foreground',
-                i < active && 'border-primary bg-background text-primary',
-                i > active && 'bg-background text-muted-foreground',
-              )}
-            >
-              {i + 1}
-            </span>
-            <span
-              className={cn(
-                'transition-colors duration-500',
-                i === active ? 'text-foreground font-medium' : 'text-muted-foreground',
-              )}
-            >
-              {s.label}
-            </span>
-          </li>
-        ))}
-      </ol>
       <Suspense fallback={null}>
-        <ParticleField
-          count={capability.count}
+        <CodeMonogram
           theme={theme}
-          progress={progress}
           active={visible}
-          onReady={() => setReady(true)}
+          onReady={() => {
+            setReady(true);
+            setHeroStatus('ready');
+          }}
         />
       </Suspense>
     </div>
