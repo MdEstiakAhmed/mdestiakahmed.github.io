@@ -10,7 +10,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import Section from '@/components/ui/Section.astro';
 import { services } from '@/data/site-data';
 
 const icons: Record<string, LucideIcon> = {
@@ -21,127 +20,498 @@ const icons: Record<string, LucideIcon> = {
   responsive: MonitorSmartphone,
   support: LifeBuoy,
 };
+
+// One hue per card (oklch degrees): blue (brand), cyan, teal, amber, coral, rose.
+const hues = [255, 215, 175, 80, 28, 350];
+const pad = (i: number) => String(i + 1).padStart(2, '0');
+// Named scroll timelines, one per card: --svc0 ... --svc5.
+const names = services.map((_, i) => `--svc${i}`);
 ---
 
-<Section id="services" eyebrow="Services" title="How I can help">
-  <ul class="border-t">
-    {services.map((s, i) => {
-      const Icon = icons[s.icon] ?? AppWindow;
-      return (
-        <li class="service reveal group relative isolate overflow-hidden border-b">
-          <div class="relative grid grid-cols-[auto_1fr] items-start gap-x-5 px-2 py-6 sm:gap-x-8 sm:px-4 md:grid-cols-[4rem_1fr_auto] md:items-center md:py-8">
-            <span class="service-num font-mono text-sm text-muted-foreground tabular-nums md:text-base">
-              {String(i + 1).padStart(2, '0')}
+<!-- Section's markup inlined so the heading and a progress rail pin with the card stack. -->
+<section id="services" aria-labelledby="services-title" class="scroll-mt-24 py-20 md:py-28">
+  <div class="svc-track" style={`timeline-scope: ${names.join(', ')}`}>
+    <!-- Progress rail: decorative, the list itself carries the content. -->
+    <div class="svc-rail" aria-hidden="true">
+      <ol class="svc-rail-in">
+        {services.map((_, i) => (
+          <li class="rail-item" style={`--tl: ${names[i]}; --tln: ${names[i + 1] ?? 'none'}`}>
+            <span class="rail-mark">
+              <span class="rail-dot" />
+              <span class="rail-num">{pad(i)}</span>
             </span>
-            <div class="min-w-0">
-              <h3 class="text-xl font-bold tracking-tight sm:text-2xl md:text-4xl">{s.title}</h3>
-              <div class="service-body grid">
-                <div class="overflow-hidden">
-                  <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-3">
-                    <p class="service-desc max-w-xl text-muted-foreground md:text-lg">
-                      {s.description}
-                    </p>
-                    <a
-                      href="#contact"
-                      class="service-cta inline-flex items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
-                    >
-                      Let's talk <ArrowUpRight className="size-4" aria-hidden="true" />
-                      <span class="sr-only">about {s.title}</span>
-                    </a>
+            {i < services.length - 1 && (
+              <span class="rail-seg">
+                <span class="rail-fill" />
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="svc-col">
+      <header class="svc-head mb-10 max-w-2xl space-y-2">
+        <p class="text-sm font-medium tracking-widest text-primary uppercase">Services</p>
+        <h2 id="services-title" class="text-3xl font-bold tracking-tight sm:text-4xl">
+          How I can help
+        </h2>
+      </header>
+
+      <ul class="svc-list">
+        {services.map((s, i) => {
+          const Icon = icons[s.icon] ?? AppWindow;
+          const words = s.title.split(' ');
+          return (
+            <li
+              class="service reveal"
+              style={`--i: ${i}; --h: ${hues[i % hues.length]}; --tl: ${names[i]}; --tln: ${names[i + 1] ?? 'none'}`}
+            >
+              <div class="svc-card" data-spotlight data-tilt="2">
+                <div class="svc-main">
+                  <div class="svc-numrow" aria-hidden="true">
+                    <span class="svc-num">{pad(i)}</span>
+                    <span class="svc-line" />
+                  </div>
+                  <h3 class="svc-title">
+                    {words.map((w, wi) => (
+                      <>
+                        <span class="w">
+                          <span class="wi" style={`--w: ${wi}`}>
+                            {w}
+                          </span>
+                        </span>
+                        {wi < words.length - 1 ? ' ' : null}
+                      </>
+                    ))}
+                  </h3>
+                  <p class="svc-desc">{s.description}</p>
+                  <a href="#contact" class="svc-cta">
+                    Let's talk <ArrowUpRight className="size-4" aria-hidden="true" />
+                    <span class="sr-only">about {s.title}</span>
+                  </a>
+                </div>
+                <div class="svc-art" aria-hidden="true">
+                  <div class="svc-icon-in">
+                    <div class="svc-icon">
+                      <Icon className="size-full" strokeWidth={1.25} />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <span
-              aria-hidden="true"
-              class="service-icon hidden size-16 place-items-center rounded-full border md:grid"
-            >
-              <Icon className="size-7" strokeWidth={1.5} />
-            </span>
-          </div>
-        </li>
-      );
-    })}
-  </ul>
-</Section>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  </div>
+</section>
 
 <style>
-  /* Colour wipe behind the row. */
-  .service::before {
+  /* ---- Base: a readable stacked list. Used on small / short screens and without scroll timelines. ---- */
+  .svc-track {
+    --card-h: 30rem;
+  }
+  .svc-rail {
+    display: none;
+  }
+  .svc-list {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .svc-card {
+    --tint: oklch(0.62 0.14 var(--h));
+    position: relative;
+    display: block;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklch, var(--tint) 35%, var(--border));
+    border-radius: 1.75rem;
+    padding: 1.5rem;
+    background: linear-gradient(
+      140deg,
+      color-mix(in oklch, var(--tint) 20%, var(--card)) 0%,
+      color-mix(in oklch, var(--tint) 5%, var(--card)) 75%
+    );
+    transform-origin: 50% 0;
+  }
+  :global(.dark) .svc-card {
+    --tint: oklch(0.74 0.13 var(--h));
+  }
+  /* Dimming veil used when a later card covers this one. */
+  .svc-card::after {
     content: '';
     position: absolute;
     inset: 0;
-    z-index: -1;
-    background: linear-gradient(
-      90deg,
-      var(--primary),
-      color-mix(in oklch, var(--primary) 70%, #22d3ee)
-    );
-    transform: scaleX(0);
+    border-radius: inherit;
+    background: var(--background);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .svc-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.9rem;
+    min-width: 0;
+  }
+  .svc-numrow {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    width: 100%;
+  }
+  .svc-num {
+    font-family: var(--font-sans);
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--tint);
+  }
+  .svc-line {
+    flex: 1;
+    height: 1px;
+    max-width: 14rem;
+    background: linear-gradient(90deg, var(--tint), transparent);
     transform-origin: left;
-    transition: transform 500ms cubic-bezier(0.7, 0, 0.2, 1);
   }
-
-  .service-num,
-  .service h3,
-  .service-desc,
-  .service-cta,
-  .service-icon {
+  .svc-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    max-width: 22ch;
+  }
+  .w {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding-block: 0.1em;
+    margin-block: -0.1em;
+  }
+  .wi {
+    display: inline-block;
+  }
+  .svc-desc {
+    max-width: 38ch;
+    color: color-mix(in oklch, var(--foreground) 78%, transparent);
+    line-height: 1.6;
+  }
+  .svc-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+    min-height: 2.5rem;
+    padding: 0.4rem 1rem;
+    border: 1px solid color-mix(in oklch, var(--foreground) 35%, transparent);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
     transition:
-      color 300ms,
-      border-color 300ms,
-      transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      background-color 200ms,
+      color 200ms,
+      border-color 200ms;
   }
-  .service-icon {
-    color: var(--muted-foreground);
+  .svc-cta:hover {
+    background: var(--foreground);
+    color: var(--background);
+    border-color: var(--foreground);
+  }
+  .svc-cta:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
   }
 
-  /* Mouse screens keep rows compact and open one on hover or keyboard focus; touch shows all. */
-  @media (hover: hover) and (pointer: fine) {
-    .service-body {
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  .svc-art {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+  }
+  .svc-icon-in {
+    display: grid;
+    place-items: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklch, var(--tint) 45%, transparent);
+    background: color-mix(in oklch, var(--tint) 14%, transparent);
+    color: var(--tint);
+  }
+  .svc-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .svc-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 2rem;
+      padding: 2.25rem 2.5rem;
     }
-    .service-desc,
-    .service-cta {
+    .svc-num {
+      font-size: 4.5rem;
+    }
+    .svc-title {
+      font-size: 2.25rem;
+    }
+    .svc-desc {
+      font-size: 1.125rem;
+    }
+    .svc-art {
+      position: static;
+    }
+    .svc-icon-in {
+      width: 9rem;
+      height: 9rem;
+      box-shadow: 0 0 0 1.25rem color-mix(in oklch, var(--tint) 7%, transparent);
+    }
+    .svc-icon {
+      width: 4rem;
+      height: 4rem;
+    }
+  }
+
+  /* ---- Pinned stack: wide, tall screens with scroll-driven animation and motion allowed. ---- */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      @media (min-width: 1024px) and (min-height: 800px) {
+        .svc-track {
+          --stick: 5rem;
+          --head-h: 5rem;
+          --top: calc(var(--stick) + var(--head-h) + 1rem);
+          /* Scroll distance from a card entering the viewport to it sitting pinned. */
+          --D: calc(100vh - var(--top));
+          /* Scroll per card (card height + gap) is about 70vh. */
+          --slot: 70vh;
+          display: grid;
+          grid-template-columns: 5.5rem minmax(0, 1fr);
+          column-gap: 1rem;
+        }
+        .svc-col {
+          min-width: 0;
+        }
+        .svc-head {
+          position: sticky;
+          top: var(--stick);
+          z-index: 20;
+          max-width: none;
+          height: var(--head-h);
+          margin-bottom: 1rem;
+          /* Opaque, so covered cards never show through the heading while the stack releases. */
+          background: var(--background);
+          box-shadow: 0 -5rem 0 var(--background);
+        }
+        .svc-list {
+          display: block;
+        }
+        .service.service {
+          position: sticky;
+          top: var(--top);
+          height: var(--card-h);
+          margin-bottom: max(2rem, calc(var(--slot) - var(--card-h)));
+          view-timeline-name: var(--tl);
+          view-timeline-axis: block;
+          animation: none;
+        }
+        /* Hold the last card pinned for a beat, then release into Contact. */
+        .service.service:last-child {
+          margin-bottom: 18vh;
+        }
+
+        /* Covered card: scale down, lift a touch, dim and soften as the next one rises over it. */
+        .service:not(:last-child) .svc-card {
+          animation: svc-cover linear both;
+          animation-timeline: var(--tln);
+          animation-range: cover calc(var(--D) - var(--card-h)) cover var(--D);
+        }
+        .service:not(:last-child) .svc-card::after {
+          animation: svc-dim linear both;
+          animation-timeline: var(--tln);
+          animation-range: cover calc(var(--D) - var(--card-h)) cover var(--D);
+        }
+
+        /* Card contents arrive as the card rises into place. */
+        .svc-card {
+          padding: 2.5rem 3.5rem;
+          gap: 3rem;
+          border-radius: 2rem;
+        }
+        .svc-num {
+          font-size: 5.5rem;
+        }
+        .svc-title {
+          font-size: 2.75rem;
+          max-width: 16ch;
+        }
+        .svc-icon-in {
+          width: 13rem;
+          height: 13rem;
+          box-shadow: 0 0 0 1.75rem color-mix(in oklch, var(--tint) 7%, transparent);
+        }
+        .svc-icon {
+          width: 5.5rem;
+          height: 5.5rem;
+          animation: svc-float 7s ease-in-out infinite;
+          animation-delay: calc(var(--i) * -1.1s);
+        }
+        .svc-line {
+          animation: svc-draw linear both;
+          animation-timeline: var(--tl);
+          animation-range: cover calc(var(--D) - var(--card-h) * 0.85) cover
+            calc(var(--D) - var(--card-h) * 0.4);
+        }
+        .svc-icon-in {
+          animation: svc-art-in cubic-bezier(0.23, 1, 0.32, 1) both;
+          animation-timeline: var(--tl);
+          animation-range: cover calc(var(--D) - var(--card-h) * 0.8) cover
+            calc(var(--D) - var(--card-h) * 0.2);
+        }
+        .wi {
+          animation: svc-word cubic-bezier(0.23, 1, 0.32, 1) both;
+          animation-timeline: var(--tl);
+          animation-range: cover calc(var(--D) - var(--card-h) * 0.75 + var(--w) * 3vh) cover
+            calc(var(--D) - var(--card-h) * 0.75 + var(--w) * 3vh + 14vh);
+        }
+
+        /* Progress rail: ticks 01-06, active one lit, connectors fill as each card lands. */
+        .svc-rail {
+          display: block;
+        }
+        .svc-rail-in {
+          position: sticky;
+          top: var(--top);
+          height: var(--card-h);
+          display: flex;
+          flex-direction: column;
+          margin-top: calc(var(--head-h) + 1rem);
+        }
+        .rail-item {
+          position: relative;
+          flex: 1;
+        }
+        .rail-item:last-child {
+          flex: 0 0 auto;
+        }
+        .rail-mark {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          opacity: 0.38;
+          transform-origin: left center;
+        }
+        .rail-dot {
+          width: 0.6rem;
+          height: 0.6rem;
+          border-radius: 999px;
+          background: var(--primary);
+        }
+        .rail-num {
+          font-size: 0.8rem;
+          font-weight: 600;
+          font-variant-numeric: tabular-nums;
+          letter-spacing: 0.04em;
+          color: var(--foreground);
+        }
+        .rail-seg {
+          position: absolute;
+          left: calc(0.3rem - 0.5px);
+          top: 1.35rem;
+          bottom: 0.35rem;
+          width: 1px;
+          background: var(--border);
+        }
+        .rail-fill {
+          display: block;
+          height: 100%;
+          background: var(--primary);
+          transform-origin: top;
+          animation: svc-draw-y linear both;
+          animation-timeline: var(--tln);
+          animation-range: cover calc(var(--D) - var(--card-h) * 0.7) cover var(--D);
+        }
+        .rail-mark {
+          animation:
+            rail-on linear both,
+            rail-off linear forwards;
+          animation-timeline: var(--tl), var(--tln);
+          animation-range:
+            cover calc(var(--D) - var(--card-h) * 0.5) cover var(--D),
+            cover calc(var(--D) - var(--card-h) * 0.5) cover var(--D);
+        }
+        .rail-item:last-child .rail-mark {
+          animation: rail-on linear both;
+          animation-timeline: var(--tl);
+          animation-range: cover calc(var(--D) - var(--card-h) * 0.5) cover var(--D);
+        }
+        .rail-item:first-child .rail-mark {
+          /* Card 1 is already pinned when the section settles; light it from the start. */
+          animation-range:
+            cover 0px cover 1px,
+            cover calc(var(--D) - var(--card-h) * 0.5) cover var(--D);
+        }
+      }
+    }
+  }
+
+  @keyframes svc-cover {
+    to {
+      scale: 0.92;
+      translate: 0 -0.9rem;
+      filter: blur(2px);
+    }
+  }
+  @keyframes svc-dim {
+    to {
+      opacity: 0.5;
+    }
+  }
+  @keyframes svc-draw {
+    from {
+      scale: 0 1;
+    }
+  }
+  @keyframes svc-draw-y {
+    from {
+      scale: 1 0;
+    }
+  }
+  @keyframes svc-word {
+    from {
+      translate: 0 110%;
+    }
+  }
+  @keyframes svc-art-in {
+    from {
       opacity: 0;
-      transition:
-        opacity 300ms,
-        color 300ms;
-    }
-
-    .service:is(:hover, :focus-within) {
-      &::before {
-        transform: scaleX(1);
-      }
-      .service-body {
-        grid-template-rows: 1fr;
-      }
-      .service-desc,
-      .service-cta {
-        opacity: 1;
-        transition-delay: 120ms;
-      }
-      .service-num,
-      h3,
-      .service-desc,
-      .service-cta {
-        color: var(--primary-foreground);
-      }
-      h3 {
-        transform: translateX(0.5rem);
-      }
-      .service-icon {
-        color: var(--primary-foreground);
-        border-color: color-mix(in oklch, var(--primary-foreground) 40%, transparent);
-        transform: rotate(-12deg) scale(1.15);
-      }
+      scale: 0.8;
+      rotate: -10deg;
     }
   }
-
-  @media (prefers-reduced-motion: reduce) {
-    .service::before {
-      transition: none;
+  @keyframes svc-float {
+    50% {
+      translate: 0 -0.6rem;
+      rotate: 3deg;
+    }
+  }
+  @keyframes rail-on {
+    to {
+      opacity: 1;
+      scale: 1.25;
+    }
+  }
+  @keyframes rail-off {
+    to {
+      opacity: 0.38;
+      scale: 1;
     }
   }
 </style>

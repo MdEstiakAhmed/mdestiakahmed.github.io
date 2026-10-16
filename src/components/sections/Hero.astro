@@ -1,30 +1,95 @@
 ---
-import { ArrowDown, Download } from 'lucide-react';
+import { ArrowRight, Download } from 'lucide-react';
 
 import HeroCanvas from '@/components/hero/HeroCanvas';
-import TypingRoles from '@/components/hero/TypingRoles';
 import SocialLinks from '@/components/SocialLinks.astro';
 import { profile } from '@/data/site-data';
 
+// The display face is all caps, so the honorific is dropped here; the full name stays in sr-only.
+const words = profile.name
+  .replace(/^Md\.\s*/, '')
+  .toUpperCase()
+  .split(' ');
 // Letters are split for the staggered reveal; the real text stays readable via sr-only.
-const words = profile.name.split(' ');
 let letterIndex = 0;
 ---
+
+<!-- Runs before the hero paints: hide the intro's start state only when motion and WebGL are likely.
+     Keep in step with detectCapability() in HeroCanvas.tsx. -->
+<script is:inline>
+  (function () {
+    const d = document.documentElement;
+    const n = navigator;
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if ((n.hardwareConcurrency || 8) <= 2 || (n.deviceMemory || 8) <= 2) return;
+    try {
+      const c = document.createElement('canvas');
+      const gl = c.getContext('webgl2') || c.getContext('webgl');
+      if (!gl) return;
+      const lose = gl.getExtension('WEBGL_lose_context');
+      if (lose) lose.loseContext();
+    } catch {
+      return;
+    }
+    // hero-3d pins the track at its final height now, so hydration causes no layout jump.
+    d.classList.add('hero-intro', 'hero-3d');
+    // Safety net: never leave content hidden or inert if the intro script fails.
+    setTimeout(function () {
+      d.classList.add('hero-intro-done');
+      const content = document.querySelector('.hero-content');
+      if (content) content.removeAttribute('inert');
+    }, 4500);
+  })();
+</script>
 
 <div id="hero-track" class="hero-track relative">
   <section
     id="home"
     aria-label="Intro"
-    class="hero-pin relative isolate flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden"
+    class="hero-pin relative isolate flex min-h-[calc(100dvh-4rem)] flex-col overflow-hidden"
   >
-    <!-- Static poster: always rendered, sits under the WebGL scene and is all you see without it. -->
+    <!-- Background: blue glow plus a halftone dot field, both under everything. -->
     <div aria-hidden="true" class="hero-poster absolute inset-0 -z-10"></div>
-    <div class="absolute inset-0 -z-10 opacity-60 md:left-[42%] md:opacity-100">
+    <div aria-hidden="true" class="hero-dots absolute inset-0 -z-10"></div>
+
+    <!-- Static stand-in for the 3D monogram: all you see without WebGL or with reduced motion. -->
+    <div
+      aria-hidden="true"
+      class="hero-fallback pointer-events-none absolute inset-x-0 top-[44%] z-0 text-center font-display leading-none"
+    >
+      &lt;/&gt;
+    </div>
+
+    <!-- The name sits behind the 3D layer, so the monogram overlaps it. -->
+    <div class="hero-name-wrap relative z-0 mx-auto w-full max-w-7xl px-4 pt-[4vh] sm:px-6">
+      <h1 class="hero-name font-display uppercase">
+        <span class="sr-only">{profile.name}</span>
+        <span
+          aria-hidden="true"
+          class="flex flex-col gap-x-[0.22em] md:flex-row md:justify-between"
+        >
+          {words.map((word) => (
+            <span class="hero-word inline-flex pb-[0.04em]">
+              {[...word].map((ch) => (
+                <span class="hero-letter inline-block" style={`--i:${letterIndex++}`}>
+                  {ch}
+                </span>
+              ))}
+            </span>
+          ))}
+        </span>
+      </h1>
+    </div>
+
+    <div
+      data-hero-layer="canvas"
+      class="hero-canvas-layer pointer-events-none absolute inset-0 z-10"
+    >
       <HeroCanvas client:only="react" trackId="hero-track" />
     </div>
 
-    <div class="hero-content mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
-      <div class="max-w-2xl space-y-7">
+    <div class="hero-content pointer-events-none relative z-20 mx-auto mt-auto flex w-full max-w-7xl flex-col justify-between gap-10 px-4 pt-8 pb-14 sm:px-6 md:flex-row md:items-end md:pb-16">
+      <div class="pointer-events-auto max-w-sm space-y-6">
         {profile.availability.open && (
           <span class="hero-fade inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur [--d:0ms]">
             <span class="relative flex size-2">
@@ -34,102 +99,184 @@ let letterIndex = 0;
             {profile.availability.label}
           </span>
         )}
-        <div class="space-y-4">
-          <h1 class="text-5xl font-bold tracking-tight sm:text-7xl">
-            <span class="sr-only">{profile.name}</span>
-            <span aria-hidden="true" class="flex flex-wrap gap-x-[0.25em]">
-              {words.map((word) => (
-                <span class="inline-flex overflow-hidden pb-[0.1em]">
-                  {[...word].map((ch) => (
-                    <span class="hero-letter inline-block" style={`--i:${letterIndex++}`}>
-                      {ch}
-                    </span>
-                  ))}
-                </span>
-              ))}
-            </span>
-          </h1>
-          <p class="hero-fade text-xl font-medium sm:text-2xl [--d:700ms]">
-            <span class="text-foreground">{profile.title}</span>
-            <span class="block min-h-[1.5em] text-primary">
-              <span class="sr-only">{profile.typingRoles.join(', ')}</span>
-              <TypingRoles client:idle roles={profile.typingRoles} />
-            </span>
-          </p>
-        </div>
-        <p class="hero-fade max-w-xl text-lg text-muted-foreground [--d:850ms]">
-          {profile.tagline}
+        <p class="hero-fade text-xl leading-snug font-medium sm:text-2xl [--d:200ms]">
+          {profile.title}
+          <span class="mt-2 block text-base font-normal text-muted-foreground">
+            {profile.tagline}
+          </span>
         </p>
-        <div class="hero-fade flex flex-wrap gap-3 [--d:1000ms]">
+        <div class="hero-fade flex flex-wrap items-center gap-x-6 gap-y-3 [--d:300ms]">
           <a
-            href="#projects"
+            href="#contact"
             data-magnetic
-            class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-[opacity,translate] hover:opacity-90"
+            class="hero-hire group inline-flex items-center gap-2 font-mono text-sm font-medium tracking-wide"
           >
-            View projects <ArrowDown className="size-4" aria-hidden="true" />
+            <span class="text-primary">//</span> HIRE ME
+            <ArrowRight
+              className="size-4 transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            />
           </a>
           <a
             href={profile.cv}
             target="_blank"
             rel="noopener noreferrer"
-            data-magnetic
-            class="inline-flex items-center gap-2 rounded-full border bg-background/60 px-6 py-3 text-sm font-medium backdrop-blur transition-colors hover:bg-accent"
+            class="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <Download className="size-4" aria-hidden="true" /> Download CV
           </a>
-          <a
-            href="#contact"
-            data-magnetic
-            class="inline-flex items-center rounded-full px-6 py-3 text-sm font-medium text-primary hover:underline"
-          >
-            Hire me
-          </a>
         </div>
-        <div class="hero-fade [--d:1150ms]">
+        <div class="hero-fade [--d:400ms]">
           <SocialLinks only={['github', 'linkedin', 'x']} />
         </div>
       </div>
+
+      <ul class="hero-fade pointer-events-auto hidden space-y-1 text-right md:block [--d:300ms]">
+        <span class="sr-only">Focus areas</span>
+        {profile.roles.map((role, i) => (
+          <li class="hero-role text-xl font-medium sm:text-2xl" data-active={i === 0 || undefined}>
+            {role}
+          </li>
+        ))}
+      </ul>
     </div>
 
     <a
       href="#about"
       aria-label="Scroll to about"
-      class="hero-fade absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs text-muted-foreground [--d:1400ms] md:flex"
+      class="hero-fade absolute bottom-4 left-1/2 z-20 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs text-muted-foreground [--d:500ms] md:flex"
     >
       <span class="flex h-9 w-5 justify-center rounded-full border border-current pt-1.5">
         <span class="hero-scroll-dot size-1 rounded-full bg-current"></span>
       </span>
-      Scroll
     </a>
   </section>
 </div>
 
 <style>
+  .hero-pin {
+    --hero-cyan: #0891b2;
+    --hero-dot: 22%;
+  }
+  :global(html.dark) .hero-pin {
+    --hero-cyan: #22d3ee;
+    --hero-dot: 18%;
+  }
+
+  /* Masks the letters' rise at top and bottom only; the sides stay open so wide glyphs never clip. */
+  .hero-word {
+    clip-path: inset(0 -0.25em);
+  }
+
+  /* The name: one line from md up, one word per line below. Anton is tall, so tighten the leading. */
+  .hero-name {
+    font-size: min(34vw, 17rem);
+    line-height: 0.88;
+    letter-spacing: 0.005em;
+  }
+  @media (min-width: 768px) {
+    .hero-name {
+      font-size: min(16.2vw, 15rem);
+    }
+  }
+
+  /* Blue glow behind the monogram, then the halftone dots the reference uses. */
   .hero-poster {
     background:
       radial-gradient(
-        40rem 32rem at 72% 45%,
-        color-mix(in oklch, var(--primary) 22%, transparent),
+        44rem 30rem at 50% 58%,
+        color-mix(in oklch, var(--primary) 24%, transparent),
         transparent 70%
       ),
       radial-gradient(
-        28rem 22rem at 85% 70%,
-        color-mix(in oklch, #22d3ee 12%, transparent),
+        26rem 18rem at 62% 70%,
+        color-mix(in oklch, var(--hero-cyan) 14%, transparent),
         transparent 70%
       );
   }
+  .hero-dots {
+    background-image: radial-gradient(
+      circle,
+      color-mix(in oklch, var(--foreground) var(--hero-dot), transparent) 1px,
+      transparent 1.6px
+    );
+    background-size: 14px 14px;
+    mask-image: radial-gradient(ellipse 45% 50% at 50% 60%, #000, transparent 75%);
+  }
 
-  /* With the 3D scene on, the hero pins while the particles morph through the shapes. */
-  :global(html.hero-3d) .hero-track {
-    height: 320vh;
+  /* Without 3D the monogram is plain type. With it, the canvas takes over. */
+  .hero-fallback {
+    font-size: min(30vw, 22rem);
+    background: linear-gradient(135deg, var(--primary), var(--hero-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 2.5rem color-mix(in oklch, var(--hero-cyan) 35%, transparent));
   }
-  :global(html.hero-3d) .hero-pin {
-    position: sticky;
-    top: 4rem;
-    height: calc(100dvh - 4rem);
+  :global(html.hero-3d) .hero-fallback {
+    display: none;
   }
-  :global(html.hero-3d) .hero-content {
-    opacity: calc(1 - max(0, var(--hero-progress, 0) - 0.85) * 6.6);
+
+  /* Pinned scroll story: md and up, only when the 3D scene is on. Below md it is a plain hero. */
+  @media (min-width: 768px) {
+    :global(html.hero-3d) .hero-track {
+      height: 260vh;
+    }
+    :global(html.hero-3d) .hero-pin {
+      position: sticky;
+      top: 4rem;
+      height: calc(100dvh - 4rem);
+    }
+    /* Scroll-driven: the name lifts away, the layers fade out over the last slice. */
+    :global(html.hero-3d) .hero-name-wrap {
+      translate: 0 calc(var(--hero-progress, 0) * -26vh);
+      scale: calc(1 + var(--hero-progress, 0) * 0.06);
+      transform-origin: 50% 0;
+    }
+    :global(html.hero-3d) .hero-name-wrap,
+    :global(html.hero-3d) .hero-canvas-layer,
+    :global(html.hero-3d) .hero-poster,
+    :global(html.hero-3d) .hero-dots,
+    :global(html.hero-3d) .hero-content {
+      opacity: calc(1 - max(0, var(--hero-progress, 0) - 0.88) * 8.3);
+    }
+  }
+
+  /* Role list: the active role is lit, the rest recede. */
+  .hero-role {
+    color: color-mix(in oklch, var(--foreground) 32%, transparent);
+    transition:
+      color 500ms ease,
+      translate 500ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .hero-role[data-active] {
+    color: var(--foreground);
+    translate: -0.5rem 0;
+  }
+
+  .hero-hire {
+    transition: translate 200ms ease-out;
+  }
+
+  /* Intro start state: only exists while html.hero-intro is set (motion allowed, JS running). */
+  :global(html.hero-intro) .hero-letter,
+  :global(html.hero-intro) .hero-fade {
+    animation: none;
+  }
+  :global(html.hero-intro:not(.hero-intro-done)) .hero-letter,
+  :global(html.hero-intro:not(.hero-intro-done)) .hero-fade,
+  :global(html.hero-intro:not(.hero-intro-done)) .hero-poster {
+    opacity: 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-letter,
+    .hero-fade,
+    .hero-scroll-dot {
+      animation: none;
+    }
+    .hero-role {
+      transition: none;
+    }
   }
 
   .hero-letter {
@@ -172,7 +319,10 @@ let letterIndex = 0;
 </style>
 
 <script>
-  // Magnetic CTAs: buttons drift toward the cursor. Fine pointers only, off for reduced motion.
+  import '@/scripts/hero-intro';
+  import '@/scripts/hero-scroll';
+
+  // Magnetic CTA: the link drifts toward the cursor. Fine pointers only, off for reduced motion.
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (canHover && !reduced) {

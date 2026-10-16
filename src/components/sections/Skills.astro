@@ -1,9 +1,303 @@
 ---
-import SkillsExplorer from '@/components/skills/SkillsExplorer';
 import Section from '@/components/ui/Section.astro';
 import { skills } from '@/data/site-data';
+
+// One hue per group (oklch degrees): blue (brand), teal, amber, coral, rose.
+const hues = [255, 175, 80, 28, 350];
+// Bento placement on wide screens: Frontend is the tall anchor.
+const spans = [
+  'lg:col-span-4 lg:row-span-2',
+  'lg:col-span-2',
+  'lg:col-span-2',
+  'lg:col-span-3',
+  'lg:col-span-3',
+];
+const pad = (n: number) => String(n).padStart(2, '0');
+const flat = skills.flatMap((g, gi) =>
+  g.items.map((label) => ({ label, h: hues[gi % hues.length] })),
+);
+// Two marquee rows with the groups interleaved so neighbours differ in colour.
+const rowA = flat.filter((_, i) => i % 2 === 0);
+const rowB = flat.filter((_, i) => i % 2 === 1);
 ---
 
 <Section id="skills" eyebrow="Skills" title="What I work with">
-  <SkillsExplorer client:visible groups={skills} />
+  <ul class="sk-grid grid gap-4 lg:grid-cols-6">
+    {skills.map((g, gi) => (
+      <li class:list={['sk-item', spans[gi]]} style={`--h: ${hues[gi % hues.length]}`}>
+        <article class="sk-card" data-spotlight>
+          <header class="sk-head">
+            <span class="sk-count" aria-hidden="true">
+              {pad(g.items.length)}
+            </span>
+            <h3 class="sk-title">{g.group}</h3>
+          </header>
+          <ul class="sk-chips" aria-label={`${g.group} skills`}>
+            {g.items.map((item, ci) => (
+              <li class="sk-chip" style={`--c: ${ci}`}>
+                <span class="sk-dot" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </article>
+      </li>
+    ))}
+  </ul>
+
+  <div class="sk-marquee" aria-hidden="true">
+    {[rowA, rowB].map((row, ri) => (
+      <div class:list={['sk-row', ri === 1 && 'sk-row-rev']}>
+        <div class="sk-track">
+          {[0, 1].map(() => (
+            <ul class="sk-set">
+              {row.map((s) => (
+                <li class="sk-chip sk-chip-m" style={`--h: ${s.h}`}>
+                  <span class="sk-dot" />
+                  {s.label}
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
 </Section>
+
+<style>
+  .sk-item {
+    --tint: oklch(0.6 0.15 var(--h));
+    min-width: 0;
+  }
+  :global(.dark) .sk-item,
+  :global(.dark) .sk-chip-m {
+    --tint: oklch(0.76 0.14 var(--h));
+  }
+  .sk-chip-m {
+    --tint: oklch(0.6 0.15 var(--h));
+  }
+
+  .sk-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--tint) 32%, var(--border));
+    border-radius: 1.75rem;
+    padding: 1.5rem;
+    background:
+      radial-gradient(
+        28rem 14rem at 100% 0%,
+        color-mix(in oklab, var(--tint) 16%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(150deg, color-mix(in oklab, var(--tint) 9%, var(--card)), var(--card) 70%);
+  }
+  /* Spotlight follows the cursor in the group's own hue. */
+  .sk-card[data-spotlight]::before {
+    background: radial-gradient(
+      20rem circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in oklab, var(--tint) 20%, transparent),
+      transparent 70%
+    );
+  }
+
+  .sk-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .sk-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .sk-count {
+    order: 2;
+    font-size: 3.25rem;
+    font-weight: 800;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--tint);
+  }
+
+  .sk-chips {
+    margin-top: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .sk-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid color-mix(in oklab, var(--tint) 28%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--tint) 7%, var(--background));
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--foreground);
+    transition:
+      transform 300ms cubic-bezier(0.23, 1, 0.32, 1),
+      border-color 300ms;
+  }
+  /* Glow lives on its own layer so hover only animates opacity. */
+  .sk-chip::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    box-shadow: 0 0 1.1rem color-mix(in oklab, var(--tint) 55%, transparent);
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  .sk-chip:hover {
+    transform: translateY(-2px);
+    border-color: var(--tint);
+  }
+  .sk-chip:hover::after {
+    opacity: 1;
+  }
+  .sk-dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    flex: none;
+    border-radius: 999px;
+    background: var(--tint);
+    box-shadow: 0 0 0.5rem var(--tint);
+  }
+
+  @media (min-width: 1024px) {
+    .sk-item:first-child .sk-chips {
+      gap: 0.75rem;
+    }
+    .sk-item:first-child .sk-chips .sk-chip {
+      padding: 0.65rem 1.2rem;
+      font-size: 1.0625rem;
+    }
+    .sk-item:first-child .sk-count {
+      font-size: 7rem;
+    }
+    .sk-item:first-child .sk-title {
+      font-size: 2rem;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .sk-card {
+      padding: 2rem;
+    }
+    .sk-title {
+      font-size: 1.5rem;
+    }
+    .sk-count {
+      font-size: 4.5rem;
+    }
+  }
+
+  /* Marquee is decorative duplication of the lists above: only shown when motion is welcome. */
+  .sk-marquee {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .sk-marquee {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 2.5rem;
+      overflow: hidden;
+      mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+    }
+    .sk-row {
+      overflow: hidden;
+    }
+    .sk-track {
+      display: flex;
+      width: max-content;
+      animation: sk-slide 90s linear infinite;
+    }
+    .sk-row-rev .sk-track {
+      animation-direction: reverse;
+      animation-duration: 110s;
+    }
+    .sk-marquee:hover .sk-track {
+      animation-play-state: paused;
+    }
+    .sk-set {
+      display: flex;
+      gap: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    .sk-chip-m {
+      white-space: nowrap;
+      padding: 0.55rem 1.1rem;
+      background: color-mix(in oklab, var(--tint) 10%, var(--card));
+    }
+  }
+
+  /* Slow, scroll-linked reveal: cards rise, then chips arrive one after another. */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .sk-card {
+        animation: sk-rise cubic-bezier(0.23, 1, 0.32, 1) both;
+        animation-timeline: var(--sk-view, view());
+        animation-range: entry 0% entry 85%;
+      }
+      .sk-count {
+        animation: sk-count linear both;
+        animation-timeline: var(--sk-view, view());
+        animation-range: entry 10% cover 45%;
+      }
+      .sk-chips .sk-chip {
+        animation: sk-chip cubic-bezier(0.23, 1, 0.32, 1) both;
+        animation-timeline: var(--sk-view, view());
+        animation-range: entry calc(20% + var(--c) * 5%) entry calc(95% + var(--c) * 5%);
+      }
+      .sk-marquee {
+        animation: sk-fade linear both;
+        animation-timeline: var(--sk-view, view());
+        animation-range: entry 0% entry 100%;
+      }
+    }
+  }
+
+  @keyframes sk-slide {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @keyframes sk-rise {
+    from {
+      opacity: 0;
+      transform: translateY(4rem) scale(0.96);
+    }
+  }
+  @keyframes sk-count {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+  }
+  @keyframes sk-chip {
+    from {
+      opacity: 0;
+      transform: translateY(1.25rem) scale(0.9);
+    }
+  }
+  @keyframes sk-fade {
+    from {
+      opacity: 0;
+    }
+  }
+</style>

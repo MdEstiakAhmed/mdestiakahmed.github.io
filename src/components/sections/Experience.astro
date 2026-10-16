@@ -18,7 +18,7 @@ import { formatDuration, formatRange } from '@/lib/format';
           <span
             aria-hidden="true"
             class:list={[
-              'timeline-dot absolute top-7 -left-10 grid size-5 place-items-center rounded-full border-2 bg-background md:-left-14',
+              'timeline-dot absolute top-7 -left-10 z-10 grid size-5 place-items-center rounded-full border-2 bg-background md:-left-14',
               current && 'is-current',
             ]}
           >
@@ -144,15 +144,10 @@ import { formatDuration, formatRange } from '@/lib/format';
     position: absolute;
     top: 0.5rem;
     bottom: 0.5rem;
-    left: 0.6rem;
+    /* Centred on the dots: they sit at the list's left edge and are 1.25rem wide. */
+    left: calc(0.625rem - 1px);
     width: 2px;
     border-radius: 2px;
-  }
-  @media (min-width: 768px) {
-    .timeline::before,
-    .timeline::after {
-      left: 1.6rem;
-    }
   }
   .timeline::before {
     background: var(--border);

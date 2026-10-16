@@ -3,143 +3,266 @@ import { Image } from 'astro:assets';
 import { Clock, GraduationCap, MapPin, Sparkles } from 'lucide-react';
 
 import avatar from '@/assets/estiak-800.webp';
-import Section from '@/components/ui/Section.astro';
 import { education, now, profile, stats } from '@/data/site-data';
 
-const tile = 'assemble rounded-3xl border bg-card p-6';
+const tile = 'assemble ab-tile';
 
 // Order and entry side for each tile as the grid assembles on scroll.
 type From = 'left' | 'right' | 'top' | 'bottom';
-const enter = (i: number, from: From) => ({ 'data-from': from, style: `--i: ${i}` });
-const statFrom: From[] = ['left', 'bottom', 'bottom'];
+// Hue (oklch degrees, blue to cyan) is optional; the photo uses the default.
+const enter = (i: number, from: From, hue?: number) => ({
+  'data-from': from,
+  style: hue === undefined ? `--i: ${i}` : `--i: ${i}; --h: ${hue}`,
+});
+
+// Split a chunk around its key phrase so the phrase can be emphasised.
+const parts = (text: string, key: string) => {
+  const at = text.indexOf(key);
+  return at < 0
+    ? { before: text, key: '', after: '' }
+    : { before: text.slice(0, at), key, after: text.slice(at + key.length) };
+};
+const chunks = profile.bioChunks.map((c) => parts(c.text, c.key));
 ---
 
-<Section id="about" eyebrow="About" title="Frontend first, full-stack when it counts">
+<!-- Section's markup inlined so the heading pins with the grid while it assembles. -->
+<section id="about" aria-labelledby="about-title" class="scroll-mt-24 py-20 md:py-28">
   <div class="assemble-track">
-    <div class="assemble-pin grid auto-rows-[minmax(9rem,auto)] grid-cols-2 gap-4 lg:grid-cols-4">
-      <!-- Photo -->
-      <div
-        data-tilt="6"
-        {...enter(0, 'left')}
-        class="assemble relative col-span-2 overflow-hidden rounded-3xl border sm:col-span-1 sm:row-span-2"
-      >
-        <Image
-          src={avatar}
-          alt={`Portrait of ${profile.name}`}
-          widths={[320, 480, 640]}
-          sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw"
-          class="size-full min-h-72 object-cover"
-        />
-        <div class="absolute inset-x-3 bottom-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white backdrop-blur-md">
-          <p class="font-semibold">{profile.name}</p>
-          <p class="text-xs text-white/75">{profile.title}</p>
-        </div>
-      </div>
-
-      <!-- Bio -->
-      <div
-        data-spotlight
-        {...enter(1, 'top')}
-        class:list={[tile, 'col-span-2 flex flex-col justify-center gap-4 sm:row-span-2']}
-      >
-        <p class="text-sm font-medium text-primary">Hi, I'm {profile.shortName} 👋</p>
-        {profile.bio.map((p) => (
-          <p class="text-base leading-relaxed text-muted-foreground lg:text-lg">{p}</p>
-        ))}
-      </div>
-
-      <!-- Currently -->
-      <div
-        data-spotlight
-        {...enter(2, 'right')}
-        class:list={[tile, 'col-span-2 flex flex-col justify-between gap-4 sm:col-span-1']}
-      >
-        <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span class="relative flex size-2">
-            <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60"></span>
-            <span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
-          </span>
-          Currently at {now.company}
-        </span>
-        <p class="flex items-start gap-2 font-medium">
-          <Sparkles className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
-          Building {now.building}
-        </p>
-      </div>
-
-      <!-- Location + live clock -->
-      <div
-        data-spotlight
-        {...enter(3, 'right')}
-        class:list={[
-          tile,
-          'col-span-2 flex flex-col justify-between gap-4 overflow-hidden sm:col-span-1',
-        ]}
-      >
+    <div class="assemble-pin">
+      <header class="about-head mb-12 max-w-2xl space-y-2">
+        <p class="text-sm font-medium tracking-widest text-primary uppercase">About</p>
+        <h2 id="about-title" class="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+          Frontend first, <span class="whitespace-nowrap">full-stack</span> when it counts
+        </h2>
+      </header>
+      <div class="grid grid-cols-2 gap-4 sm:auto-rows-auto lg:grid-cols-4">
+        <!-- Photo -->
         <div
-          aria-hidden="true"
-          class="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-[radial-gradient(circle,var(--primary)_1px,transparent_1.5px)] [background-size:10px_10px] opacity-30 [mask-image:radial-gradient(circle,black_40%,transparent_70%)]"
-        ></div>
-        <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <MapPin className="size-3.5 text-primary" aria-hidden="true" /> Based in
-        </span>
-        <div>
-          <p class="font-semibold">{profile.location}</p>
-          <p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Clock className="size-3.5" aria-hidden="true" />
-            <span data-clock={now.timeZone}>GMT+6</span>
-            <span>local time</span>
-          </p>
-        </div>
-      </div>
-
-      <!-- Stats -->
-      {stats.map((s, i) => (
-        <div
-          data-spotlight
-          {...enter(4 + i, statFrom[i] ?? 'bottom')}
-          class:list={[tile, 'flex flex-col justify-end']}
+          data-tilt="6"
+          {...enter(0, 'left')}
+          class="assemble ab-photo relative col-span-2 sm:col-span-1 sm:col-start-1 sm:row-span-2 sm:row-start-1"
         >
-          <p class="text-4xl font-bold tracking-tight sm:text-5xl">
-            <span data-count-to={s.value()}>{s.value()}</span>
-            <span class="text-primary">{s.suffix}</span>
-          </p>
-          <p class="mt-2 text-sm text-muted-foreground">{s.label}</p>
+          <div class="size-full overflow-hidden rounded-[inherit]">
+            <Image
+              src={avatar}
+              alt={`Portrait of ${profile.name}`}
+              widths={[320, 480, 640]}
+              sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw"
+              class="size-full min-h-72 object-cover"
+            />
+          </div>
+          <div class="absolute inset-x-3 bottom-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white backdrop-blur-md">
+            <p class="font-semibold">{profile.name}</p>
+            <p class="text-xs text-white/75">{profile.title}</p>
+          </div>
         </div>
-      ))}
 
-      <!-- Education -->
-      {education.length > 0 && (
+        <!-- Bio -->
         <div
           data-spotlight
-          {...enter(4 + stats.length, 'right')}
-          class:list={[tile, 'flex flex-col justify-between gap-4']}
+          {...enter(1, 'top', 255)}
+          class:list={[
+            tile,
+            'col-span-2 flex flex-col justify-center gap-4 sm:col-start-1 sm:row-start-3 lg:col-start-2 lg:row-span-2 lg:row-start-1',
+          ]}
+        >
+          <p class="text-sm font-medium text-primary">Hi, I'm {profile.shortName} 👋</p>
+          {chunks.map((c, k) => (
+            <p class="ab-chunk text-base leading-relaxed text-muted-foreground" style={`--k: ${k}`}>
+              {c.before}
+              {c.key && <strong class="ab-key">{c.key}</strong>}
+              {c.after}
+            </p>
+          ))}
+        </div>
+
+        <!-- Currently -->
+        <div
+          data-spotlight
+          {...enter(2, 'right', 200)}
+          class:list={[
+            tile,
+            'col-span-2 flex flex-col justify-between gap-4 sm:col-span-1 sm:col-start-2 sm:row-start-1 lg:col-start-4',
+          ]}
         >
           <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <GraduationCap className="size-3.5 text-primary" aria-hidden="true" /> Studied
+            <span class="relative flex size-2">
+              <span class="absolute inline-flex size-full animate-ping rounded-full bg-emerald-500 opacity-60"></span>
+              <span class="relative inline-flex size-2 rounded-full bg-emerald-500"></span>
+            </span>
+            Currently at {now.company}
           </span>
-          <ol class="space-y-2">
-            {education.map((e) => (
-              <li class="flex items-baseline justify-between gap-3">
-                <span class="min-w-0">
-                  <span class="block text-sm font-semibold">{e.credential}</span>
-                  <span class="block truncate text-xs text-muted-foreground" title={e.institute}>
+          <p class="flex items-start gap-2 font-medium">
+            <Sparkles className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />
+            Building {now.building}
+          </p>
+        </div>
+
+        <!-- Location + live clock -->
+        <div
+          data-spotlight
+          {...enter(3, 'right', 230)}
+          class:list={[
+            tile,
+            'col-span-2 flex flex-col justify-between gap-4 sm:col-span-1 sm:col-start-2 sm:row-start-2 lg:col-start-4',
+          ]}
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 160 160"
+            class="ab-orbit pointer-events-none absolute -top-8 -right-8 size-40"
+          >
+            <g fill="none" stroke="currentColor" stroke-width="1">
+              <circle cx="80" cy="80" r="26"></circle>
+              <circle cx="80" cy="80" r="46" stroke-dasharray="2 5"></circle>
+              <circle cx="80" cy="80" r="68"></circle>
+              <ellipse cx="80" cy="80" rx="68" ry="24" transform="rotate(-28 80 80)"></ellipse>
+            </g>
+            <g fill="currentColor">
+              <circle cx="80" cy="80" r="3"></circle>
+              <circle cx="126" cy="80" r="2.5"></circle>
+              <circle cx="40" cy="42" r="2"></circle>
+              <circle cx="34" cy="116" r="1.5"></circle>
+              <circle cx="136" cy="44" r="1.5"></circle>
+            </g>
+          </svg>
+          <span class="relative inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <MapPin className="size-3.5 text-primary" aria-hidden="true" /> Based in
+          </span>
+          <div class="relative">
+            <p class="font-semibold">{profile.location}</p>
+            <p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Clock className="size-3.5" aria-hidden="true" />
+              <span data-clock={now.timeZone}>GMT+6</span>
+              <span>local time</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div
+          data-spotlight
+          {...enter(4, 'bottom', 215)}
+          class:list={[
+            tile,
+            'flex items-center col-span-2 sm:col-start-1 sm:row-start-4 lg:col-span-2 lg:row-start-3',
+          ]}
+        >
+          <dl class="grid w-full grid-cols-3 divide-x divide-[color-mix(in_oklab,var(--tint)_25%,var(--border))]">
+            {stats.map((s) => (
+              <div class="flex flex-col-reverse gap-1 px-3 first:pl-0 last:pr-0 sm:px-5">
+                <dt class="text-xs leading-snug text-muted-foreground">{s.label}</dt>
+                <dd class="text-3xl font-bold tracking-tight tabular-nums sm:text-4xl">
+                  <span data-count-to={s.value()}>{s.value()}</span>
+                  <span class="text-[var(--tint)]">{s.suffix}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        <!-- Education -->
+        {education.length > 0 && (
+          <div
+            data-spotlight
+            {...enter(5, 'right', 255)}
+            class:list={[
+              tile,
+              'col-span-2 flex flex-col justify-between gap-3 sm:col-start-1 sm:row-start-5 lg:col-span-2 lg:col-start-3 lg:row-start-3',
+            ]}
+          >
+            <span class="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground">
+              <GraduationCap className="size-3.5 text-primary" aria-hidden="true" /> Studied
+            </span>
+            <ol class="space-y-2">
+              {education.map((e) => (
+                <li>
+                  <span class="flex items-baseline justify-between gap-3">
+                    <span class="text-sm font-semibold">{e.credential}</span>
+                    <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
+                      {e.start}–{e.end}
+                    </span>
+                  </span>
+                  <span class="block text-xs leading-snug text-muted-foreground">
                     {e.institute}
                   </span>
-                </span>
-                <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
-                  {e.start}–{e.end}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
     </div>
   </div>
-</Section>
+</section>
 
 <style>
+  /* Hue-glass tiles, same recipe as Skills; --h is set per tile. */
+  .ab-tile {
+    --tint: oklch(0.6 0.15 var(--h, 255));
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklab, var(--tint) 32%, var(--border));
+    border-radius: 1.75rem;
+    padding: 1.25rem;
+    background:
+      radial-gradient(
+        28rem 14rem at 100% 0%,
+        color-mix(in oklab, var(--tint) 16%, transparent),
+        transparent 70%
+      ),
+      linear-gradient(150deg, color-mix(in oklab, var(--tint) 9%, var(--card)), var(--card) 70%);
+  }
+  :global(.dark) .ab-tile {
+    --tint: oklch(0.76 0.14 var(--h, 255));
+  }
+  .ab-tile[data-spotlight]::before {
+    background: radial-gradient(
+      20rem circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in oklab, var(--tint) 20%, transparent),
+      transparent 70%
+    );
+  }
+
+  /* Photo: cyan ring and soft glow, echoing the hero. */
+  .ab-photo {
+    --ab-cyan: #0891b2;
+    border-radius: 1.75rem;
+    border: 1px solid color-mix(in oklab, var(--ab-cyan) 60%, transparent);
+    box-shadow:
+      0 0 0 4px color-mix(in oklab, var(--ab-cyan) 12%, transparent),
+      0 0 2.5rem color-mix(in oklab, var(--ab-cyan) 28%, transparent);
+  }
+  :global(.dark) .ab-photo {
+    --ab-cyan: #22d3ee;
+  }
+
+  /* Bio chunks: a bar and a highlighted key phrase. */
+  .ab-chunk {
+    border-left: 2px solid color-mix(in oklab, var(--tint) 60%, transparent);
+    padding-left: 0.9rem;
+  }
+  .ab-key {
+    font-weight: 600;
+    color: var(--foreground);
+    background: linear-gradient(
+      transparent 62%,
+      color-mix(in oklab, var(--tint) 28%, transparent) 62%
+    );
+  }
+
+  /* Orbit motif behind the location: faint, echoes the starfield. */
+  .ab-orbit {
+    color: var(--tint);
+    opacity: 0.3;
+  }
+
+  @media (min-width: 1024px) {
+    .ab-chunk {
+      font-size: 1.0625rem;
+    }
+  }
+
   /*
    * The bento builds itself: tiles fly in one by one from their side.
    * Wide, tall screens pin the grid and tie each tile to a slice of the scroll; elsewhere each
@@ -168,11 +291,11 @@ const statFrom: From[] = ['left', 'bottom', 'bottom'];
         animation-range: entry 0% entry 80%;
       }
 
-      @media (min-width: 1024px) and (min-height: 760px) {
+      @media (min-width: 1024px) and (min-height: 800px) {
         .assemble-track {
-          /* Roughly centre the grid (~32rem tall) under the header. */
-          --stick: max(6rem, calc(50vh - 16rem));
-          --hold: 130vh;
+          /* Roughly centre the heading + grid (~42rem tall) under the site header. */
+          --stick: max(5rem, calc(50vh - 21rem));
+          --hold: 132vh;
           view-timeline: --about block;
         }
         /* Scroll room for the pinned grid. A child, not padding: sticky stops at the content box. */
@@ -185,13 +308,29 @@ const statFrom: From[] = ['left', 'bottom', 'bottom'];
           position: sticky;
           top: var(--stick);
         }
+        .about-head {
+          margin-bottom: 2rem;
+        }
         .assemble {
-          /* Start slightly before the grid pins, then one tile every 13vh of scroll. */
-          --start: calc(80vh - var(--stick) + var(--i) * 13vh);
+          /* Start slightly before the grid pins, then one tile every 14vh of scroll. */
+          --start: calc(80vh - var(--stick) + var(--i) * 14vh);
           animation-timeline: var(--tl, --about);
-          animation-range: cover var(--start) cover calc(var(--start) + 24vh);
+          animation-range: cover var(--start) cover calc(var(--start) + 30vh);
+        }
+        /* Once the tiles are in, the bio lights up a chunk at a time until the pin lets go. */
+        .ab-chunk {
+          --lit: calc(120vh - var(--stick) + var(--k) * 36vh);
+          animation: ab-lit linear both;
+          animation-timeline: var(--tl, --about);
+          animation-range: cover var(--lit) cover calc(var(--lit) + 40vh);
         }
       }
+    }
+  }
+
+  @keyframes ab-lit {
+    from {
+      opacity: 0.5;
     }
   }
 
