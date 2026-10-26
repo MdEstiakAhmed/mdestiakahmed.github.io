@@ -4,106 +4,97 @@ import { skills } from '@/data/site-data';
 
 // One hue per group (oklch degrees): blue (brand), teal, amber, coral, rose.
 const hues = [255, 175, 80, 28, 350];
-// Bento placement on wide screens: Frontend is the tall anchor.
-const spans = [
-  'lg:col-span-4 lg:row-span-2',
-  'lg:col-span-2',
-  'lg:col-span-2',
-  'lg:col-span-3',
-  'lg:col-span-3',
-];
 const pad = (n: number) => String(n).padStart(2, '0');
-const flat = skills.flatMap((g, gi) =>
-  g.items.map((label) => ({ label, h: hues[gi % hues.length] })),
-);
-// Two marquee rows with the groups interleaved so neighbours differ in colour.
-const rowA = flat.filter((_, i) => i % 2 === 0);
-const rowB = flat.filter((_, i) => i % 2 === 1);
 ---
 
 <Section id="skills" eyebrow="Skills" title="What I work with">
-  <ul class="sk-grid grid gap-4 lg:grid-cols-6">
-    {skills.map((g, gi) => (
-      <li class:list={['sk-item', spans[gi]]} style={`--h: ${hues[gi % hues.length]}`}>
-        <article class="sk-card" data-spotlight>
-          <header class="sk-head">
-            <span class="sk-count" aria-hidden="true">
-              {pad(g.items.length)}
-            </span>
-            <h3 class="sk-title">{g.group}</h3>
-          </header>
-          <ul class="sk-chips" aria-label={`${g.group} skills`}>
-            {g.items.map((item, ci) => (
-              <li class="sk-chip" style={`--c: ${ci}`}>
-                <span class="sk-dot" aria-hidden="true" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </article>
-      </li>
-    ))}
-  </ul>
+  <!-- Scroll story: the track is tall, the stage pins, and the code frames play as you scroll.
+       Without JS or with reduced motion the track stays a plain, fully visible grid. -->
+  <div id="skills-track" class="sk-track" style={`--sk-steps: ${skills.length}`}>
+    <div class="sk-stage">
+      <canvas class="sk-canvas" aria-hidden="true"></canvas>
+      <div class="sk-shade" aria-hidden="true"></div>
 
-  <div class="sk-marquee" aria-hidden="true">
-    {[rowA, rowB].map((row, ri) => (
-      <div class:list={['sk-row', ri === 1 && 'sk-row-rev']}>
-        <div class="sk-track">
-          {[0, 1].map(() => (
-            <ul class="sk-set">
-              {row.map((s) => (
-                <li class="sk-chip sk-chip-m" style={`--h: ${s.h}`}>
-                  <span class="sk-dot" />
-                  {s.label}
+      <ol class="sk-rail" aria-hidden="true">
+        {skills.map((g, gi) => (
+          <li class="sk-rail-item" style={`--h: ${hues[gi % hues.length]}`}>
+            <span class="sk-rail-dot"></span>
+            <span class="sk-rail-label">{g.group}</span>
+          </li>
+        ))}
+      </ol>
+
+      <div class="sk-panels">
+        {skills.map((g, gi) => (
+          <article class="sk-panel" style={`--h: ${hues[gi % hues.length]}`}>
+            <header class="sk-head">
+              <span class="sk-count" aria-hidden="true">
+                {pad(g.items.length)}
+              </span>
+              <h3 class="sk-title">{g.group}</h3>
+            </header>
+            <ul class="sk-chips" aria-label={`${g.group} skills`}>
+              {g.items.map((item) => (
+                <li class="sk-chip">
+                  <span class="sk-dot" aria-hidden="true" />
+                  {item}
                 </li>
               ))}
             </ul>
-          ))}
-        </div>
+          </article>
+        ))}
       </div>
-    ))}
+
+      <div class="sk-bar" aria-hidden="true">
+        <span></span>
+      </div>
+    </div>
   </div>
 </Section>
 
+<script>
+  import '@/scripts/skills-sequence';
+</script>
+
 <style>
-  .sk-item {
-    --tint: oklch(0.6 0.15 var(--h));
+  /* The stage is always dark: it sits on code footage, in both themes. */
+  .sk-stage {
+    --ink: oklch(0.97 0.005 250);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 1.75rem;
+    color: var(--ink);
+    background:
+      radial-gradient(40rem 20rem at 85% 0%, oklch(0.32 0.08 255 / 0.55), transparent 70%),
+      oklch(0.15 0.01 250);
+  }
+  .sk-canvas,
+  .sk-shade {
+    display: none;
+  }
+
+  /* Static layout (no JS, reduced motion): every group visible in a grid. */
+  .sk-panels {
+    display: grid;
+    gap: 2rem 1.5rem;
+    padding: 1.5rem;
+  }
+  .sk-rail,
+  .sk-bar {
+    display: none;
+  }
+  @media (min-width: 640px) {
+    .sk-panels {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding: 2.5rem;
+    }
+  }
+
+  .sk-panel {
+    --tint: oklch(0.76 0.14 var(--h));
     min-width: 0;
   }
-  :global(.dark) .sk-item,
-  :global(.dark) .sk-chip-m {
-    --tint: oklch(0.76 0.14 var(--h));
-  }
-  .sk-chip-m {
-    --tint: oklch(0.6 0.15 var(--h));
-  }
-
-  .sk-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-    border: 1px solid color-mix(in oklab, var(--tint) 32%, var(--border));
-    border-radius: 1.75rem;
-    padding: 1.5rem;
-    background:
-      radial-gradient(
-        28rem 14rem at 100% 0%,
-        color-mix(in oklab, var(--tint) 16%, transparent),
-        transparent 70%
-      ),
-      linear-gradient(150deg, color-mix(in oklab, var(--tint) 9%, var(--card)), var(--card) 70%);
-  }
-  /* Spotlight follows the cursor in the group's own hue. */
-  .sk-card[data-spotlight]::before {
-    background: radial-gradient(
-      20rem circle at var(--mx, 50%) var(--my, 50%),
-      color-mix(in oklab, var(--tint) 20%, transparent),
-      transparent 70%
-    );
-  }
-
   .sk-head {
     display: flex;
     align-items: flex-end;
@@ -112,14 +103,14 @@ const rowB = flat.filter((_, i) => i % 2 === 1);
     margin-bottom: 1.25rem;
   }
   .sk-title {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.2;
   }
   .sk-count {
     order: 2;
-    font-size: 3.25rem;
+    font-size: 4rem;
     font-weight: 800;
     line-height: 0.85;
     letter-spacing: -0.04em;
@@ -127,47 +118,22 @@ const rowB = flat.filter((_, i) => i % 2 === 1);
     color: transparent;
     -webkit-text-stroke: 1.5px var(--tint);
   }
-
   .sk-chips {
-    margin-top: auto;
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
   .sk-chip {
-    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.4rem 0.85rem;
-    border: 1px solid color-mix(in oklab, var(--tint) 28%, var(--border));
+    border: 1px solid color-mix(in oklab, var(--tint) 40%, transparent);
     border-radius: 999px;
-    background: color-mix(in oklab, var(--tint) 7%, var(--background));
+    background: color-mix(in oklab, var(--tint) 14%, oklch(0.15 0.01 250 / 0.6));
     font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.25;
-    color: var(--foreground);
-    transition:
-      transform 300ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 300ms;
-  }
-  /* Glow lives on its own layer so hover only animates opacity. */
-  .sk-chip::after {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    z-index: -1;
-    border-radius: inherit;
-    box-shadow: 0 0 1.1rem color-mix(in oklab, var(--tint) 55%, transparent);
-    opacity: 0;
-    transition: opacity 300ms;
-  }
-  .sk-chip:hover {
-    transform: translateY(-2px);
-    border-color: var(--tint);
-  }
-  .sk-chip:hover::after {
-    opacity: 1;
   }
   .sk-dot {
     width: 0.45rem;
@@ -178,126 +144,171 @@ const rowB = flat.filter((_, i) => i % 2 === 1);
     box-shadow: 0 0 0.5rem var(--tint);
   }
 
+  /* Live: pinned stage over the playing frames, one group at a time. */
+  .sk-track[data-live] {
+    --sk-pin: 4.5rem; /* clears the sticky header */
+    height: calc(100svh + var(--sk-steps) * 55svh);
+  }
+  .sk-track[data-live] .sk-stage {
+    position: sticky;
+    top: var(--sk-pin);
+    height: calc(100svh - var(--sk-pin) - 1rem);
+  }
+  .sk-track[data-live] .sk-canvas {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .sk-track[data-live] .sk-shade {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        0deg,
+        oklch(0.12 0.01 250 / 0.92),
+        oklch(0.12 0.01 250 / 0.25) 55%,
+        transparent
+      ),
+      linear-gradient(90deg, oklch(0.12 0.01 250 / 0.7), transparent 70%);
+  }
+  .sk-track[data-live] .sk-panels {
+    position: absolute;
+    inset: auto 0 0 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 1.5rem 1.5rem 3rem;
+  }
+  .sk-track[data-live] .sk-panel {
+    grid-area: 1 / 1;
+    max-width: 38rem;
+    opacity: 0;
+    transform: translateY(1.5rem);
+    transition:
+      opacity 500ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 500ms cubic-bezier(0.23, 1, 0.32, 1);
+    pointer-events: none;
+  }
+  .sk-track[data-live] .sk-panel[data-active] {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+  .sk-track[data-live] .sk-panel[data-past] {
+    transform: translateY(-1.5rem);
+  }
+  .sk-track[data-live] .sk-count {
+    font-size: 5rem;
+  }
+
+  .sk-track[data-live] .sk-rail {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    font-size: 0.8125rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .sk-rail-item {
+    --tint: oklch(0.76 0.14 var(--h));
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    opacity: 0.65;
+    transition: opacity 300ms;
+  }
+  .sk-rail-item[data-active] {
+    opacity: 1;
+  }
+  .sk-rail-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--tint);
+  }
+  .sk-rail-item[data-active] .sk-rail-dot {
+    box-shadow: 0 0 0.75rem var(--tint);
+  }
+  @media (max-width: 639px) {
+    .sk-rail-label {
+      display: none;
+    }
+    .sk-track[data-live] {
+      height: calc(100svh + var(--sk-steps) * 40svh);
+    }
+  }
+
+  .sk-track[data-live] .sk-bar {
+    display: block;
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: oklch(1 0 0 / 0.12);
+  }
+  .sk-bar span {
+    display: block;
+    height: 100%;
+    transform-origin: left;
+    transform: scaleX(var(--sk-progress, 0));
+    background: oklch(0.76 0.14 255);
+  }
+
   @media (min-width: 1024px) {
-    .sk-item:first-child .sk-chips {
-      gap: 0.75rem;
+    .sk-track[data-live] .sk-panels {
+      padding: 3rem 3.5rem 4rem;
     }
-    .sk-item:first-child .sk-chips .sk-chip {
-      padding: 0.65rem 1.2rem;
-      font-size: 1.0625rem;
+    .sk-track[data-live] .sk-title {
+      font-size: 2.25rem;
     }
-    .sk-item:first-child .sk-count {
+    .sk-track[data-live] .sk-count {
       font-size: 7rem;
     }
-    .sk-item:first-child .sk-title {
-      font-size: 2rem;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .sk-card {
-      padding: 2rem;
-    }
-    .sk-title {
-      font-size: 1.5rem;
-    }
-    .sk-count {
-      font-size: 4.5rem;
-    }
-  }
-
-  /* Marquee is decorative duplication of the lists above: only shown when motion is welcome. */
-  .sk-marquee {
-    display: none;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .sk-marquee {
-      display: grid;
+    .sk-track[data-live] .sk-chips {
       gap: 0.75rem;
-      margin-top: 2.5rem;
-      overflow: hidden;
-      mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
     }
-    .sk-row {
-      overflow: hidden;
-    }
-    .sk-track {
-      display: flex;
-      width: max-content;
-      animation: sk-slide 90s linear infinite;
-    }
-    .sk-row-rev .sk-track {
-      animation-direction: reverse;
-      animation-duration: 110s;
-    }
-    .sk-marquee:hover .sk-track {
-      animation-play-state: paused;
-    }
-    .sk-set {
-      display: flex;
-      gap: 0.75rem;
-      padding-right: 0.75rem;
-    }
-    .sk-chip-m {
-      white-space: nowrap;
-      padding: 0.55rem 1.1rem;
-      background: color-mix(in oklab, var(--tint) 10%, var(--card));
+    .sk-track[data-live] .sk-chip {
+      padding: 0.6rem 1.15rem;
+      font-size: 1rem;
     }
   }
 
-  /* Slow, scroll-linked reveal: cards rise, then chips arrive one after another. */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .sk-card {
-        animation: sk-rise cubic-bezier(0.23, 1, 0.32, 1) both;
-        animation-timeline: var(--sk-view, view());
-        animation-range: entry 0% entry 85%;
-      }
-      .sk-count {
-        animation: sk-count linear both;
-        animation-timeline: var(--sk-view, view());
-        animation-range: entry 10% cover 45%;
-      }
-      .sk-chips .sk-chip {
-        animation: sk-chip cubic-bezier(0.23, 1, 0.32, 1) both;
-        animation-timeline: var(--sk-view, view());
-        animation-range: entry calc(20% + var(--c) * 5%) entry calc(95% + var(--c) * 5%);
-      }
-      .sk-marquee {
-        animation: sk-fade linear both;
-        animation-timeline: var(--sk-view, view());
-        animation-range: entry 0% entry 100%;
-      }
+  /* Print: drop the pin and the footage, show every group on white. */
+  @media print {
+    .sk-track[data-live] {
+      height: auto;
     }
-  }
-
-  @keyframes sk-slide {
-    to {
-      transform: translateX(-50%);
+    .sk-track[data-live] .sk-stage {
+      --ink: oklch(0.2 0.01 250);
+      position: static;
+      height: auto;
+      border-color: var(--border);
+      background: none;
     }
-  }
-  @keyframes sk-rise {
-    from {
-      opacity: 0;
-      transform: translateY(4rem) scale(0.96);
+    .sk-track[data-live] .sk-canvas,
+    .sk-track[data-live] .sk-shade,
+    .sk-track[data-live] .sk-rail,
+    .sk-track[data-live] .sk-bar {
+      display: none;
     }
-  }
-  @keyframes sk-count {
-    from {
-      opacity: 0;
-      transform: translateY(1rem);
+    .sk-track[data-live] .sk-panels {
+      position: static;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2rem 1.5rem;
+      padding: 1.5rem;
     }
-  }
-  @keyframes sk-chip {
-    from {
-      opacity: 0;
-      transform: translateY(1.25rem) scale(0.9);
+    .sk-track[data-live] .sk-panel {
+      max-width: none;
+      opacity: 1;
+      transform: none;
     }
-  }
-  @keyframes sk-fade {
-    from {
-      opacity: 0;
+    .sk-track[data-live] .sk-chip {
+      background: none;
     }
   }
 </style>
