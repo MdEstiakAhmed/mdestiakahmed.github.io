@@ -17,7 +17,7 @@ concurrency:
 env:
   # What goes live on estiak.me. Keep "legacy" (the 2022 site in legacy/) while the
   # revamp is in progress; switch to "astro" at cutover.
-  DEPLOY_TARGET: legacy
+  DEPLOY_TARGET: astro
 
 jobs:
   build:
