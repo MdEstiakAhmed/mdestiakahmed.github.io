@@ -1,6 +1,7 @@
 ---
 import '@/styles/global.css';
 
+import Starfield from '@/components/Starfield.astro';
 import { profile, seo, socials } from '@/data/site-data';
 
 interface Props {
@@ -50,7 +51,7 @@ const person = {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Poppins:wght@300;400;500;600;700&display=swap"
     />
 
     <script is:inline set:html={JSON.stringify(person)} type="application/ld+json" />
@@ -72,6 +73,7 @@ const person = {
     </script>
   </head>
   <body class="min-h-dvh">
+    <Starfield />
     <slot />
     <script>
       import '@/scripts/interactions';

@@ -83,18 +83,34 @@ export const profile = {
   name: 'Md. Estiak Ahmed',
   shortName: 'Estiak',
   title: 'Frontend-focused Full-Stack Engineer',
-  typingRoles: ['Frontend Wizard', 'Code Craftsman'],
+  roles: [
+    'Frontend Engineering',
+    'Full-Stack Development',
+    'Micro-frontends',
+    'Component Libraries',
+  ],
   tagline: 'React, Next.js, TypeScript and NestJS. Based in Dhaka, Bangladesh.',
   location: 'Dhaka, Bangladesh',
   email: 'estiak97@gmail.com',
   website: 'https://estiak.me',
   cv: 'https://drive.google.com/file/d/1G0tTU6Krfr_moptuvdmmIzqDoSjYglaN/view?usp=drive_link',
-  availability: { open: true, label: 'Open to freelance' },
+  availability: { open: true, label: 'Happy to work' },
   // birthday + plain-text phone intentionally removed
   whatsapp: 'https://wa.me/8801766461990',
-  bio: [
-    'I am a software engineer from Dhaka, Bangladesh, with 5+ years of experience building for the web. My focus is the frontend: React, Next.js, TypeScript and SvelteKit, from micro-frontends to component libraries.',
-    'I also build the other half. I design and ship APIs with Node.js and NestJS, model data with TypeORM on Postgres and MySQL, and automate delivery with Docker and GitHub Actions.',
+  /** The bio split at sentence boundaries, with the phrase to emphasise in each chunk. */
+  bioChunks: [
+    {
+      text: 'I am a software engineer from Dhaka, Bangladesh, with 5+ years of experience building for the web.',
+      key: '5+ years of experience',
+    },
+    {
+      text: 'My focus is the frontend: React, Next.js, TypeScript and SvelteKit, from micro-frontends to component libraries.',
+      key: 'React, Next.js, TypeScript and SvelteKit',
+    },
+    {
+      text: 'I also build the other half. I design and ship APIs with Node.js and NestJS, model data with TypeORM on Postgres and MySQL, and automate delivery with Docker and GitHub Actions.',
+      key: 'APIs with Node.js and NestJS',
+    },
   ],
 } as const;
 
@@ -129,7 +145,7 @@ export const socials: Social[] = [
 export const nav = [
   { label: 'About', href: '#about' },
   { label: 'Experience', href: '#experience' },
-  { label: 'Projects', href: '#projects' },
+  // { label: 'Projects', href: '#projects' },
   { label: 'Skills', href: '#skills' },
   { label: 'Services', href: '#services' },
   { label: 'Contact', href: '#contact' },
