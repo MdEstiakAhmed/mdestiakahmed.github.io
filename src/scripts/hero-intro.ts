@@ -52,6 +52,11 @@ async function run(): Promise<void> {
   heroState.intro = 0;
   setContentInert(true);
 
+  // The page loader covers the hero until it hands over; the scene keeps loading behind it.
+  if (!root.classList.contains('loader-done')) {
+    await new Promise((resolve) => window.addEventListener('loader:done', resolve, { once: true }));
+  }
+
   // A bfcache restore or tab close mid-intro must not strand hidden content.
   window.addEventListener('pagehide', finish, { once: true });
   window.addEventListener('pageshow', (e) => {

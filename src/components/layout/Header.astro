@@ -6,7 +6,7 @@ import { nav, profile } from '@/data/site-data';
 
 <header class="sticky top-0 z-50 border-b border-transparent bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
   <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-    <a href="#home" class="font-semibold tracking-tight">
+    <a href="#home" class="inline-block font-semibold tracking-tight" aria-label={profile.name} data-scramble>
       {profile.name}
     </a>
     <nav aria-label="Primary" class="hidden md:block">
@@ -26,3 +26,7 @@ import { nav, profile } from '@/data/site-data';
     </div>
   </div>
 </header>
+
+<script>
+  import '@/scripts/scramble-text';
+</script>

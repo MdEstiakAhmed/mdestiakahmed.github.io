@@ -38,7 +38,7 @@ let letterIndex = 0;
       d.classList.add('hero-intro-done');
       const content = document.querySelector('.hero-content');
       if (content) content.removeAttribute('inert');
-    }, 4500);
+    }, 8000); // loader (up to 5s) plus the intro
   })();
 </script>
 
@@ -289,6 +289,11 @@ let letterIndex = 0;
   }
   .hero-scroll-dot {
     animation: hero-scroll 1.8s ease-in-out infinite;
+  }
+  /* CSS entrance (no hero-intro): hold it until the page loader hands over. */
+  :global(html.js:not(.loader-done)) .hero-letter,
+  :global(html.js:not(.loader-done)) .hero-fade {
+    animation-play-state: paused;
   }
 
   @keyframes hero-letter {

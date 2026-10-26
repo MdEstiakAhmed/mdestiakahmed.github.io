@@ -1,0 +1,76 @@
+---
+// Full-screen intro loader. Sequence and failsafes live in src/scripts/loader.ts.
+---
+
+<div id="loader" aria-hidden="true">
+  <canvas data-loader-smoke></canvas>
+  <span class="loader-text" data-loader-text>LOADING...</span>
+</div>
+
+<!-- Runs at parse time so a failed or blocked bundle can never leave the page covered. -->
+<script is:inline>
+  (function () {
+    const d = document.documentElement;
+    const release = function () {
+      if (d.classList.contains('loader-done')) return;
+      d.classList.add('loader-done');
+      const el = document.getElementById('loader');
+      if (el) el.remove();
+      window.dispatchEvent(new Event('loader:done'));
+    };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return release();
+    setTimeout(release, 5000);
+  })();
+</script>
+
+<script>
+  import '@/scripts/loader';
+</script>
+
+<style>
+  /* Only exists once the head script has set html.js, so no-JS visitors never see it. */
+  #loader {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    background: var(--background);
+  }
+  :global(html.js) #loader {
+    display: flex;
+  }
+  :global(html.loader-done) #loader {
+    pointer-events: none;
+  }
+  /* The canvas takes over the solid colour once the smoke starts. */
+  #loader.smoke {
+    background: transparent;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .loader-text {
+    position: relative;
+    visibility: hidden; /* shown on the first scramble frame, so the clean word never flashes */
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 7vw, 4.5rem);
+    letter-spacing: 0.14em;
+    text-align: center;
+    color: var(--primary);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #loader {
+      display: none;
+    }
+  }
+
+  /* Hold page content still and in place until the loader hands over. */
+  :global(html.js:not(.loader-done)) {
+    overflow: hidden;
+  }
+</style>

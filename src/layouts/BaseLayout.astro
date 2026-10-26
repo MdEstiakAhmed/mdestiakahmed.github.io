@@ -1,6 +1,7 @@
 ---
 import '@/styles/global.css';
 
+import Loader from '@/components/layout/Loader.astro';
 import Starfield from '@/components/Starfield.astro';
 import { profile, seo, socials } from '@/data/site-data';
 
@@ -73,6 +74,7 @@ const person = {
     </script>
   </head>
   <body class="min-h-dvh">
+    <Loader />
     <Starfield />
     <slot />
     <script>
