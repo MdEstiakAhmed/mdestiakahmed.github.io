@@ -7,7 +7,7 @@ const hues = [255, 175, 80, 28, 350];
 const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
-<Section id="skills" eyebrow="Skills" title="What I work with">
+<Section id="skills" eyebrow="Skills" title="What I work with" class="px-4 py-0 sm:px-6 md:py-0">
   <!-- Scroll story: the track is tall, the stage pins, and the code frames play as you scroll.
        Without JS or with reduced motion the track stays a plain, fully visible grid. -->
   <div id="skills-track" class="sk-track" style={`--sk-steps: ${skills.length}`}>
@@ -27,12 +27,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
       <div class="sk-panels">
         {skills.map((g, gi) => (
           <article class="sk-panel" style={`--h: ${hues[gi % hues.length]}`}>
-            <header class="sk-head">
-              <span class="sk-count" aria-hidden="true">
-                {pad(g.items.length)}
-              </span>
-              <h3 class="sk-title">{g.group}</h3>
-            </header>
+            <h3 class="sk-title">{g.group}</h3>
             <ul class="sk-chips" aria-label={`${g.group} skills`}>
               {g.items.map((item) => (
                 <li class="sk-chip">
@@ -41,13 +36,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
                 </li>
               ))}
             </ul>
+            <span class="sk-count" aria-hidden="true">
+              {pad(g.items.length)}
+            </span>
           </article>
         ))}
       </div>
 
-      <div class="sk-bar" aria-hidden="true">
-        <span></span>
-      </div>
     </div>
   </div>
 </Section>
@@ -74,14 +69,26 @@ const pad = (n: number) => String(n).padStart(2, '0');
     display: none;
   }
 
+  /* Section still gets a text gutter (px-4 sm:px-6) for the eyebrow/title; break the
+     track out of it so the stage itself reaches the viewport edges. */
+  .sk-track {
+    width: calc(100% + 2rem);
+    margin-inline: -1rem;
+  }
+  @media (min-width: 640px) {
+    .sk-track {
+      width: calc(100% + 3rem);
+      margin-inline: -1.5rem;
+    }
+  }
+
   /* Static layout (no JS, reduced motion): every group visible in a grid. */
   .sk-panels {
     display: grid;
     gap: 2rem 1.5rem;
     padding: 1.5rem;
   }
-  .sk-rail,
-  .sk-bar {
+  .sk-rail {
     display: none;
   }
   @media (min-width: 640px) {
@@ -95,21 +102,16 @@ const pad = (n: number) => String(n).padStart(2, '0');
     --tint: oklch(0.76 0.14 var(--h));
     min-width: 0;
   }
-  .sk-head {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-  }
   .sk-title {
+    margin-bottom: 1.25rem;
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.2;
   }
   .sk-count {
-    order: 2;
+    display: block;
+    margin-top: 1.25rem;
     font-size: 4rem;
     font-weight: 800;
     line-height: 0.85;
@@ -146,13 +148,24 @@ const pad = (n: number) => String(n).padStart(2, '0');
 
   /* Live: pinned stage over the playing frames, one group at a time. */
   .sk-track[data-live] {
-    --sk-pin: 4.5rem; /* clears the sticky header */
-    height: calc(100svh + var(--sk-steps) * 55svh);
+    --sk-pin: 4.5rem; /* keeps rail/panel text clear of the sticky header */
+    height: calc(100svh + var(--sk-steps) * 165svh);
   }
   .sk-track[data-live] .sk-stage {
     position: sticky;
-    top: var(--sk-pin);
-    height: calc(100svh - var(--sk-pin) - 1rem);
+    top: 0;
+    height: 100svh;
+    border: none;
+    border-radius: 0;
+    /* Iris wipe: a dot opens into a full circle over the first 8% of the pinned scroll,
+       and closes back to a dot over the last 8% — driven by the scroll progress the
+       sequence script already writes to --sk-progress on the track. */
+    --sk-iris: min(
+      calc(var(--sk-progress, 0) / 0.08),
+      calc((1 - var(--sk-progress, 0)) / 0.08),
+      1
+    );
+    clip-path: circle(calc(var(--sk-iris) * 120vmax) at 50% 50%);
   }
   .sk-track[data-live] .sk-canvas {
     display: block;
@@ -176,17 +189,21 @@ const pad = (n: number) => String(n).padStart(2, '0');
   }
   .sk-track[data-live] .sk-panels {
     position: absolute;
-    inset: auto 0 0 0;
+    inset: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    justify-items: center;
     gap: 0;
-    padding: 1.5rem 1.5rem 3rem;
+    padding: 1.5rem;
   }
   .sk-track[data-live] .sk-panel {
     grid-area: 1 / 1;
+    width: 100%;
     max-width: 38rem;
+    margin-inline: auto;
     opacity: 0;
-    transform: translateY(1.5rem);
+    transform: translateX(3rem);
     transition:
       opacity 500ms cubic-bezier(0.23, 1, 0.32, 1),
       transform 500ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -198,15 +215,22 @@ const pad = (n: number) => String(n).padStart(2, '0');
     pointer-events: auto;
   }
   .sk-track[data-live] .sk-panel[data-past] {
-    transform: translateY(-1.5rem);
+    transform: translateX(-3rem);
+  }
+  .sk-track[data-live] .sk-title {
+    text-align: center;
   }
   .sk-track[data-live] .sk-count {
     font-size: 5rem;
+    text-align: center;
+  }
+  .sk-track[data-live] .sk-chips {
+    justify-content: center;
   }
 
   .sk-track[data-live] .sk-rail {
     position: absolute;
-    top: 1.5rem;
+    top: calc(var(--sk-pin) + 1rem);
     left: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -240,28 +264,13 @@ const pad = (n: number) => String(n).padStart(2, '0');
       display: none;
     }
     .sk-track[data-live] {
-      height: calc(100svh + var(--sk-steps) * 40svh);
+      height: calc(100svh + var(--sk-steps) * 120svh);
     }
-  }
-
-  .sk-track[data-live] .sk-bar {
-    display: block;
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 3px;
-    background: oklch(1 0 0 / 0.12);
-  }
-  .sk-bar span {
-    display: block;
-    height: 100%;
-    transform-origin: left;
-    transform: scaleX(var(--sk-progress, 0));
-    background: oklch(0.76 0.14 255);
   }
 
   @media (min-width: 1024px) {
     .sk-track[data-live] .sk-panels {
-      padding: 3rem 3.5rem 4rem;
+      padding: 3rem 3.5rem;
     }
     .sk-track[data-live] .sk-title {
       font-size: 2.25rem;
@@ -289,11 +298,11 @@ const pad = (n: number) => String(n).padStart(2, '0');
       height: auto;
       border-color: var(--border);
       background: none;
+      clip-path: none;
     }
     .sk-track[data-live] .sk-canvas,
     .sk-track[data-live] .sk-shade,
-    .sk-track[data-live] .sk-rail,
-    .sk-track[data-live] .sk-bar {
+    .sk-track[data-live] .sk-rail {
       display: none;
     }
     .sk-track[data-live] .sk-panels {

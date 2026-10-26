@@ -63,6 +63,14 @@ function init(
   let near = false;
   let pin = 0;
 
+  // Lazy: the panel-switch tween is a nice-to-have, never worth blocking init on.
+  let gsap: typeof import('gsap').gsap | undefined;
+  import('gsap')
+    .then((m) => {
+      gsap = m.gsap;
+    })
+    .catch(() => {});
+
   function resize(): void {
     const scale = Math.min(window.devicePixelRatio || 1, 1.5);
     canvas.width = Math.round(canvas.clientWidth * scale);
@@ -152,8 +160,30 @@ function init(
     if (index === activeGroup) return;
     activeGroup = index;
     panels.forEach((el, i) => {
-      el.toggleAttribute('data-active', i === index);
+      const active = i === index;
+      el.toggleAttribute('data-active', active);
       el.toggleAttribute('data-past', i < index);
+      // Incoming panel rises in; let gsap own the tween and hand transform/opacity back to
+      // CSS once it settles, so the next (CSS-driven) data-past exit still transitions cleanly.
+      if (active && gsap) {
+        const tweenGsap = gsap;
+        el.style.transition = 'none';
+        tweenGsap.fromTo(
+          el,
+          { x: 48, opacity: 0 },
+          {
+            x: 0,
+            opacity: 1,
+            duration: 0.5,
+            ease: 'power3.out',
+            overwrite: 'auto',
+            onComplete: () => {
+              el.style.transition = '';
+              tweenGsap.set(el, { clearProps: 'transform,opacity' });
+            },
+          },
+        );
+      }
     });
     rail.forEach((el, i) => el.toggleAttribute('data-active', i === index));
   }
