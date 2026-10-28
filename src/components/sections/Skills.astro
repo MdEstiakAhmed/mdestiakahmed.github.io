@@ -157,12 +157,12 @@ const pad = (n: number) => String(n).padStart(2, '0');
     height: 100svh;
     border: none;
     border-radius: 0;
-    /* Iris wipe: a dot opens into a full circle over the first 8% of the pinned scroll,
-       and closes back to a dot over the last 8% — driven by the scroll progress the
+    /* Iris wipe: a dot opens into a full circle over the first 16% of the pinned scroll,
+       and closes back to a dot over the last 16% — driven by the scroll progress the
        sequence script already writes to --sk-progress on the track. */
     --sk-iris: min(
-      calc(var(--sk-progress, 0) / 0.08),
-      calc((1 - var(--sk-progress, 0)) / 0.08),
+      calc(var(--sk-progress, 0) / 0.16),
+      calc((1 - var(--sk-progress, 0)) / 0.16),
       1
     );
     clip-path: circle(calc(var(--sk-iris) * 120vmax) at 50% 50%);
